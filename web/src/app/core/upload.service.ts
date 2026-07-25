@@ -12,6 +12,8 @@ export interface UploadTask {
   progress: number; // 0-100
   status: 'preparing' | 'uploading' | 'processing' | 'done' | 'error';
   error?: string;
+  folderId?: string | null;
+  isFolder?: boolean;
 }
 
 interface PendingSession {
@@ -83,12 +85,67 @@ export class UploadService {
       if (entry) entries.push(entry);
     }
     if (entries.length === 0) return;
-    const queue: { file: File; folderId: string | null }[] = [];
+
     for (const entry of entries) {
-      await this.collectEntry(entry, folderId, queue);
-    }
-    for (const q of queue) {
-      await this.uploadOne(q.file, q.folderId);
+      if (entry.isFile) {
+        const file = await this.entryToFile(entry as FileSystemFileEntry);
+        await this.uploadOne(file, folderId);
+      } else if (entry.isDirectory) {
+        // Tạo một task duy nhất cho cả thư mục này
+        const taskId = crypto.randomUUID();
+        this.tasks.update((l) => [
+          ...l,
+          {
+            id: taskId,
+            name: `Thư mục: ${entry.name}`,
+            size: 0,
+            progress: 0,
+            status: 'preparing',
+            folderId: null,
+            isFolder: true,
+          },
+        ]);
+
+        try {
+          // 1. Tạo thư mục cha cao nhất trên server
+          const created = await firstValueFrom(
+            this.api.createFolder(entry.name, folderId),
+          );
+          this.updateTask(taskId, { folderId: created.id });
+
+          // 2. Thu thập tất cả các file bên trong thư mục đệ quy
+          const folderQueue: { file: File; folderId: string | null }[] = [];
+          const children = await this.readAllEntries(
+            (entry as FileSystemDirectoryEntry).createReader(),
+          );
+          for (const child of children) {
+            await this.collectEntrySilent(child, created.id, folderQueue);
+          }
+
+          // 3. Tải các file lên một cách âm thầm và cập nhật tiến trình cho task thư mục
+          const totalFiles = folderQueue.length;
+          if (totalFiles === 0) {
+            this.updateTask(taskId, { status: 'done', progress: 100 });
+          } else {
+            let completedCount = 0;
+            this.updateTask(taskId, { status: 'uploading', progress: 0 });
+            for (const q of folderQueue) {
+              await this.uploadCore(q.file, q.folderId, () => {});
+              completedCount++;
+              this.updateTask(taskId, {
+                progress: Math.round((completedCount / totalFiles) * 100),
+              });
+            }
+            this.updateTask(taskId, { status: 'done', progress: 100 });
+            this.completed.update((n) => n + 1);
+          }
+        } catch (err) {
+          this.updateTask(taskId, {
+            status: 'error',
+            error: (err as Error).message,
+          });
+        }
+      }
     }
     if (entries.some((e) => e.isDirectory)) this.navEvents.bumpFolders();
   }
@@ -100,29 +157,74 @@ export class UploadService {
    * đường dẫn rồi upload file vào đúng chỗ.
    */
   async uploadFolderPicker(files: File[], baseFolderId: string | null): Promise<void> {
-    const folderCache = new Map<string, string | null>();
-    folderCache.set('', baseFolderId);
-    for (const file of files) {
-      const rel = file.webkitRelativePath || file.name;
-      const parts = rel.split('/');
-      parts.pop(); // bỏ tên file
-      let path = '';
-      let parentId = baseFolderId;
-      for (const seg of parts) {
-        const next = path ? `${path}/${seg}` : seg;
-        if (!folderCache.has(next)) {
-          const created = await firstValueFrom(this.api.createFolder(seg, parentId));
-          folderCache.set(next, created.id);
+    if (files.length === 0) return;
+
+    const firstRel = files[0].webkitRelativePath || '';
+    const topLevelFolderName = firstRel.split('/')[0] || 'Thư mục mới';
+
+    const taskId = crypto.randomUUID();
+    this.tasks.update((l) => [
+      ...l,
+      {
+        id: taskId,
+        name: `Thư mục: ${topLevelFolderName}`,
+        size: 0,
+        progress: 0,
+        status: 'preparing',
+        folderId: baseFolderId,
+        isFolder: true,
+      },
+    ]);
+
+    try {
+      const folderCache = new Map<string, string | null>();
+      folderCache.set('', baseFolderId);
+      let topLevelCreatedId: string | null = baseFolderId;
+      let completedCount = 0;
+      const totalFiles = files.length;
+
+      this.updateTask(taskId, { status: 'uploading', progress: 0 });
+
+      for (const file of files) {
+        const rel = file.webkitRelativePath || file.name;
+        const parts = rel.split('/');
+        parts.pop(); // bỏ tên file
+        let path = '';
+        let parentId = baseFolderId;
+
+        for (const seg of parts) {
+          const next = path ? `${path}/${seg}` : seg;
+          if (!folderCache.has(next)) {
+            const created = await firstValueFrom(this.api.createFolder(seg, parentId));
+            folderCache.set(next, created.id);
+            if (path === '') {
+              topLevelCreatedId = created.id;
+              this.updateTask(taskId, { folderId: created.id });
+            }
+          }
+          parentId = folderCache.get(next)!;
+          path = next;
         }
-        parentId = folderCache.get(next)!;
-        path = next;
+
+        await this.uploadCore(file, parentId, () => {});
+        completedCount++;
+        this.updateTask(taskId, {
+          progress: Math.round((completedCount / totalFiles) * 100),
+        });
       }
-      await this.uploadOne(file, parentId);
+
+      this.updateTask(taskId, { status: 'done', progress: 100 });
+      this.completed.update((n) => n + 1);
+    } catch (err) {
+      this.updateTask(taskId, {
+        status: 'error',
+        error: (err as Error).message,
+      });
     }
     this.navEvents.bumpFolders();
   }
 
-  private async collectEntry(
+  private async collectEntrySilent(
     entry: FileSystemEntry,
     parentFolderId: string | null,
     queue: { file: File; folderId: string | null }[],
@@ -131,7 +233,6 @@ export class UploadService {
       const file = await this.entryToFile(entry as FileSystemFileEntry);
       queue.push({ file, folderId: parentFolderId });
     } else if (entry.isDirectory) {
-      // Tạo folder tương ứng rồi đệ quy vào trong.
       const created = await firstValueFrom(
         this.api.createFolder(entry.name, parentFolderId),
       );
@@ -139,7 +240,7 @@ export class UploadService {
         (entry as FileSystemDirectoryEntry).createReader(),
       );
       for (const child of children) {
-        await this.collectEntry(child, created.id, queue);
+        await this.collectEntrySilent(child, created.id, queue);
       }
     }
   }
@@ -180,13 +281,32 @@ export class UploadService {
         size: original.size,
         progress: 0,
         status: 'preparing',
+        folderId,
+        isFolder: false,
       },
     ]);
+    try {
+      await this.uploadCore(original, folderId, (status, progress) => {
+        this.updateTask(taskId, { status, progress });
+      });
+      this.completed.update((n) => n + 1);
+    } catch (err) {
+      this.updateTask(taskId, {
+        status: 'error',
+        error: (err as Error).message,
+      });
+    }
+  }
 
+  private async uploadCore(
+    original: File,
+    folderId: string | null,
+    onStateChange: (status: 'preparing' | 'uploading' | 'processing' | 'done', progress: number) => void,
+  ): Promise<void> {
     let session: PendingSession | undefined;
     let fp = '';
     try {
-      // Nén ảnh trước khi upload (mục 4.A).
+      onStateChange('preparing', 0);
       const file = await this.maybeCompress(original);
       const ext = original.name.includes('.')
         ? original.name.split('.').pop()!.toLowerCase()
@@ -197,7 +317,6 @@ export class UploadService {
       let doneParts = new Map<number, string>(); // partNumber -> ETag
 
       if (pending[fp]) {
-        // Resume: hỏi R2 các part đã có.
         session = pending[fp];
         const existing = await firstValueFrom(
           this.api.listParts(session.fileId, session.uploadId),
@@ -225,23 +344,14 @@ export class UploadService {
 
       const partSize = session.partSize;
       const partCount = Math.max(1, Math.ceil(file.size / partSize));
-      this.updateTask(taskId, { status: 'uploading' });
+      onStateChange('uploading', Math.round((doneParts.size / partCount) * 100));
 
-      // Danh sách part còn thiếu.
       const missing: number[] = [];
       for (let i = 1; i <= partCount; i++) {
         if (!doneParts.has(i)) missing.push(i);
       }
 
       let completedCount = doneParts.size;
-      const updateProgress = (): void =>
-        this.updateTask(taskId, {
-          progress: Math.round((completedCount / partCount) * 100),
-        });
-      updateProgress();
-
-      // Upload song song với pool concurrency (mục 5.A).
-      // Bytes đi QUA backend (proxy) rồi backend đẩy lên R2 — không dính CORS R2.
       const activeSession = session;
       await this.runPool(missing, this.concurrency, async (partNumber) => {
         const start = (partNumber - 1) * partSize;
@@ -256,10 +366,10 @@ export class UploadService {
         );
         doneParts.set(partNumber, etag);
         completedCount++;
-        updateProgress();
+        onStateChange('uploading', Math.round((completedCount / partCount) * 100));
       });
 
-      // Ghép chunk.
+      onStateChange('processing', 100);
       const parts = [...doneParts.entries()]
         .map(([PartNumber, ETag]) => ({ PartNumber, ETag }))
         .sort((a, b) => a.PartNumber - b.PartNumber);
@@ -267,33 +377,24 @@ export class UploadService {
         this.api.completeUpload(session.fileId, session.uploadId, parts),
       );
 
-      // Dọn state resume.
       delete pending[fp];
       this.savePending(pending);
-
-      this.updateTask(taskId, { status: 'done', progress: 100 });
-      this.completed.update((n) => n + 1);
+      onStateChange('done', 100);
     } catch (err) {
-      // Upload lỗi -> abort phiên: xoá row File 'uploading' dở dang trên server
-      // để KHÔNG hiện file rác lên UI (mục 5.A).
       if (session) {
         try {
           await firstValueFrom(
             this.api.abortUpload(session.fileId, session.uploadId),
           );
-        } catch {
-          /* bỏ qua lỗi abort */
-        }
+        } catch {}
         const pending = this.loadPending();
         delete pending[fp];
         this.savePending(pending);
       }
-      this.updateTask(taskId, {
-        status: 'error',
-        error: (err as Error).message,
-      });
+      throw err;
     }
   }
+
 
   private async maybeCompress(file: File): Promise<File> {
     const isImage = file.type.startsWith('image/');

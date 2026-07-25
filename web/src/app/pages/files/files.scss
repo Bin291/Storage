@@ -208,20 +208,26 @@
   border: 1px solid transparent;
 }
 .tile:hover {
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.16);
 }
 :root[data-theme="dark"] .tile:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 .tile.selected {
-  background: rgba(0, 113, 227, 0.08);
-  border: 1px solid var(--c-accent);
+  background: rgba(0, 113, 227, 0.12);
+  border: 1.5px solid var(--c-accent);
 }
 :root[data-theme="dark"] .tile.selected {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--c-accent);
+  background: rgba(255, 255, 255, 0.22);
+  border: 1.5px solid var(--c-accent);
+}
+.tile.selected:hover {
+  background: rgba(0, 113, 227, 0.16);
+}
+:root[data-theme="dark"] .tile.selected:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 .tile-preview {
   position: relative;
@@ -596,9 +602,39 @@
 .up-status {
   flex-shrink: 0;
   color: var(--c-body);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .up-status.err {
   color: var(--c-danger);
+}
+.up-status-text {
+  font-size: var(--fs-caption);
+  color: var(--c-body);
+}
+.up-locate-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-accent, #0071e3);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm, 4px);
+  transition: background-color 0.15s ease;
+  &:hover {
+    background: rgba(127, 127, 127, 0.08);
+    color: var(--c-accent-strong);
+  }
+}
+:root[data-theme="dark"] .up-locate-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.up-check-done {
+  color: var(--c-success, #22c55e);
+  font-weight: bold;
 }
 .up-bar {
   height: 4px;

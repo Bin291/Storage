@@ -942,6 +942,14 @@ export class Files {
     this.previewIndex.set(-1);
   }
 
+  locateUpload(task: any): void {
+    if (task.folderId) {
+      this.router.navigate(['/folder', task.folderId]);
+    } else {
+      this.router.navigate(['/files']);
+    }
+  }
+
   private loadPreview(file: FileItem, kind: PreviewKind): void {
     this.previewFile.set(file);
     this.previewKind.set(kind);

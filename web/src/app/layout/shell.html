@@ -23,11 +23,30 @@
       @if (toolbar.showFilters()) {
         <div class="topnav-actions">
           @if (toolbar.isBrowse()) {
-            <select class="select" (change)="toolbar.onCategoryChange($any($event.target).value)">
-              @for (c of categories; track c.value) {
-                <option [value]="c.value" [selected]="toolbar.category() === c.value">{{ c.label }}</option>
+            <div class="custom-select-wrap">
+              <button class="select-btn" (click)="categoryMenuOpen.set(!categoryMenuOpen())">
+                {{ currentCategoryLabel() }}
+                <span class="mi sm">expand_more</span>
+              </button>
+
+              @if (categoryMenuOpen()) {
+                <div class="menu-backdrop select-menu-backdrop" (click)="categoryMenuOpen.set(false)"></div>
+                <div class="menu select-menu">
+                  @for (c of categories; track c.value) {
+                    <button
+                      class="select-item"
+                      [class.active]="toolbar.category() === c.value"
+                      (click)="selectCategory(c.value)"
+                    >
+                      <span>{{ c.label }}</span>
+                      @if (toolbar.category() === c.value) {
+                        <span class="mi sm select-check">check</span>
+                      }
+                    </button>
+                  }
+                </div>
               }
-            </select>
+            </div>
           }
 
           <div class="sort-group">

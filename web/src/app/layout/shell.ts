@@ -53,6 +53,7 @@ export class Shell implements OnInit, OnDestroy {
   readonly prefs = inject(ViewPrefsService);
   readonly inbox = inject(InboxService);
   readonly inboxOpen = signal(false);
+  readonly categoryMenuOpen = signal(false);
 
   readonly categories = [
     { value: '', label: 'Tất cả loại' },
@@ -64,6 +65,17 @@ export class Shell implements OnInit, OnDestroy {
     { value: 'archive', label: 'Nén' },
     { value: 'code', label: 'Mã nguồn' },
   ];
+
+  readonly currentCategoryLabel = computed(() => {
+    const val = this.toolbar.category();
+    const cat = this.categories.find((c) => c.value === (val || ''));
+    return cat ? cat.label : 'Tất cả loại';
+  });
+
+  selectCategory(val: string): void {
+    this.toolbar.onCategoryChange(val);
+    this.categoryMenuOpen.set(false);
+  }
 
   triggerSearch(): void {
     const q = this.searchQuery().trim();

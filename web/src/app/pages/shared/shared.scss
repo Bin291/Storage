@@ -192,4 +192,8 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
 }

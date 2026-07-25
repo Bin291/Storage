@@ -10,6 +10,10 @@
   height: 100%;
   overflow: auto;
   background: transparent;
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
 }
 
 .dv-state {

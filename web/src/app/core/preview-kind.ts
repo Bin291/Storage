@@ -23,7 +23,12 @@ export type PreviewKind =
   | 'other';
 
 const SHEET_EXTS = new Set(['xlsx', 'xls', 'csv', 'ods']);
-const TEXT_RAW_EXTS = new Set(['txt', 'md']);
+const TEXT_RAW_EXTS = new Set([
+  'txt', 'md', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'json', 'py', 'go', 'java',
+  'c', 'cpp', 'h', 'hpp', 'cs', 'sh', 'bat', 'ps1', 'yml', 'yaml', 'sql', 'xml',
+  'rs', 'kt', 'php', 'rb', 'swift', 'scala', 'gradle', 'properties', 'ini', 'conf',
+  'dockerfile'
+]);
 // .doc (nhị phân cũ) KHÔNG được docx-preview hỗ trợ (chỉ đọc OOXML .docx) -> rơi vào text-extract.
 const TEXT_EXTRACT_EXTS = new Set(['doc', 'ppt', 'pptx', 'odt', 'odp', 'rtf', 'epub']);
 
