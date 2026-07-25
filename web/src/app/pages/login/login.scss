@@ -1,0 +1,91 @@
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-lg);
+  background: var(--c-canvas);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-sm);
+  margin-bottom: var(--s-xxl);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.brand .mark {
+  font-size: 22px;
+}
+.brand .wordmark {
+  font-size: var(--fs-heading-md);
+}
+
+h1 {
+  font-size: var(--fs-display-lg);
+}
+
+.sub {
+  color: var(--c-body);
+  margin: var(--s-sm) 0 var(--s-xxl);
+  font-size: var(--fs-body-sm);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-lg);
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-xs);
+}
+.field span {
+  font-size: var(--fs-body-sm);
+  font-weight: 500;
+  color: var(--c-charcoal);
+  padding-left: var(--s-xs);
+}
+
+.full {
+  width: 100%;
+}
+
+.msg {
+  margin: 0;
+  font-size: var(--fs-body-sm);
+  padding-left: var(--s-xs);
+}
+.msg.error {
+  color: var(--c-danger);
+}
+.msg.notice {
+  color: var(--c-success);
+}
+
+.toggle {
+  margin-top: var(--s-xl);
+  font-size: var(--fs-body-sm);
+  color: var(--c-body);
+}
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--c-ink);
+  font-weight: 500;
+  font-size: inherit;
+  text-decoration: underline;
+}

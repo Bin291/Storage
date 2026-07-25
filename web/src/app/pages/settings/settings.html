@@ -1,0 +1,142 @@
+<section class="settings">
+  <header class="head">
+    <span class="eyebrow">Cá nhân hoá</span>
+    <h1>Cài đặt</h1>
+    <p class="lede">Điều chỉnh giao diện và hành vi mặc định. Mọi thay đổi áp dụng ngay.</p>
+  </header>
+
+  <!-- Giao diện -->
+  <div class="card sect">
+    <div class="sect-head">
+      <h3>Giao diện</h3>
+      <p>Chế độ sáng/tối cho toàn ứng dụng.</p>
+    </div>
+    <div class="segmented">
+      @for (opt of themeOptions; track opt.value) {
+        <button
+          [class.on]="theme.mode() === opt.value"
+          (click)="theme.set(opt.value)"
+        >
+          <span class="mi sm seg-ico">{{ opt.icon }}</span>{{ opt.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Màu nhấn -->
+  <div class="card sect">
+    <div class="sect-head">
+      <h3>Màu nhấn</h3>
+      <p>Màu cho nút chính, lựa chọn và điểm nhấn.</p>
+    </div>
+    <div class="swatches">
+      @for (p of accent.presets; track p.id) {
+        <button
+          class="swatch"
+          [class.on]="accent.current() === p.id"
+          [style.--sw]="p.base"
+          [title]="p.label"
+          (click)="accent.set(p.id)"
+        >
+          <span class="dot"></span>
+          <span class="sw-label">{{ p.label }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Hiển thị -->
+  <div class="card sect">
+    <div class="sect-head">
+      <h3>Hiển thị tệp</h3>
+      <p>Chế độ xem và mật độ mặc định khi mở thư mục.</p>
+    </div>
+    <div class="rows">
+      <div class="opt-row">
+        <span class="opt-label">Chế độ xem</span>
+        <div class="segmented sm">
+          @for (opt of viewOptions; track opt.value) {
+            <button [class.on]="prefs.mode() === opt.value" (click)="setView(opt.value)">
+              <span class="mi sm seg-ico">{{ opt.icon }}</span>{{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+      <div class="opt-row">
+        <span class="opt-label">Mật độ</span>
+        <div class="segmented sm">
+          @for (opt of densityOptions; track opt.value) {
+            <button [class.on]="prefs.density() === opt.value" (click)="setDensity(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sắp xếp -->
+  <div class="card sect">
+    <div class="sect-head">
+      <h3>Sắp xếp mặc định</h3>
+      <p>Thứ tự khi mở danh sách tệp.</p>
+    </div>
+    <div class="rows">
+      <div class="opt-row">
+        <span class="opt-label">Theo</span>
+        <div class="segmented sm">
+          @for (opt of sortOptions; track opt.value) {
+            <button [class.on]="prefs.defaultSort() === opt.value" (click)="setSort(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+      <div class="opt-row">
+        <span class="opt-label">Chiều</span>
+        <div class="segmented sm">
+          @for (opt of orderOptions; track opt.value) {
+            <button [class.on]="prefs.defaultOrder() === opt.value" (click)="setOrder(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thông báo -->
+  <div class="card sect">
+    <div class="sect-head">
+      <h3>Thông báo</h3>
+      <p>Hiện thông báo trình duyệt khi tệp xử lý xong.</p>
+    </div>
+    <button
+      class="toggle"
+      [class.on]="prefs.notifyOnDone()"
+      role="switch"
+      [attr.aria-checked]="prefs.notifyOnDone()"
+      (click)="toggleNotify()"
+    >
+      <span class="knob"></span>
+    </button>
+  </div>
+
+  <!-- Tài khoản -->
+  <div class="card sect account">
+    <div class="sect-head">
+      <h3>Tài khoản</h3>
+      <p>Hồ sơ, tên hiển thị và dung lượng đã dùng.</p>
+    </div>
+    <a routerLink="/profile" class="btn btn-secondary btn-sm">Mở hồ sơ →</a>
+  </div>
+
+  <!-- Đăng xuất -->
+  <div class="card sect logout-sect">
+    <div class="sect-head">
+      <h3>Đăng xuất</h3>
+      <p>Đăng xuất khỏi tài khoản hiện tại trên thiết bị này.</p>
+    </div>
+    <button class="btn btn-danger btn-sm" (click)="signOut()">Đăng xuất</button>
+  </div>
+</section>

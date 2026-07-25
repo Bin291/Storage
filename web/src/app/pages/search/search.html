@@ -1,0 +1,52 @@
+<section class="page">
+  <h1>AI Search</h1>
+  <p class="lead muted">
+    Tìm bằng ngôn ngữ tự nhiên qua nội dung tệp. Nhấn Enter để tìm.
+  </p>
+
+  <div class="search-box">
+    <input
+      class="search-pill big"
+      type="search"
+      placeholder="Ví dụ: hợp đồng thuê nhà năm 2024…"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      (keyup.enter)="run()"
+      autofocus
+    />
+    <button class="btn btn-primary" [disabled]="loading()" (click)="run()">
+      @if (loading()) { <span class="spinner"></span> } Tìm
+    </button>
+  </div>
+
+  @if (error()) {
+    <p class="err">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <div class="state"><span class="spinner"></span> Đang tìm…</div>
+  } @else if (searched() && results().length === 0) {
+    <div class="state empty">Không tìm thấy kết quả phù hợp.</div>
+  } @else {
+    <div class="results">
+      @for (r of results(); track r.fileId) {
+        <div class="card result">
+          <div class="r-head">
+            <span class="r-name"><span class="mi sm r-ico">{{ iconFor(r.fileName) }}</span>{{ r.fileName }}</span>
+            <span class="r-score" [style.opacity]="0.5 + r.similarity / 2">
+              {{ scorePercent(r.similarity) }}%
+            </span>
+          </div>
+          @for (s of r.snippets; track $index) {
+            <p class="snippet">…{{ s }}…</p>
+          }
+          <div class="r-actions">
+            <button class="btn btn-secondary btn-sm" (click)="download(r.fileId, r.fileName)">
+              Tải xuống
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

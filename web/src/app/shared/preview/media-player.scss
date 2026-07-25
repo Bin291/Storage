@@ -1,0 +1,251 @@
+:host {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Video ---------- */
+.mp-video-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.mp-video-box video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+.mp-big-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 68px;
+  height: 68px;
+  border: none;
+  border-radius: var(--r-full);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.mp-big-play:hover {
+  background: rgba(0, 0, 0, 0.72);
+  transform: scale(1.06);
+}
+.mp-big-play .mi {
+  font-size: 34px;
+}
+.mp-spinner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.mp-spinner-overlay .spinner {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+/* ---------- Thanh điều khiển dùng chung ---------- */
+.mp-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+.mp-bar-video {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--s-md) var(--s-lg);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  transition: opacity 0.25s ease;
+  opacity: 1;
+}
+.mp-bar-video.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.mp-bar-video .mp-play-btn,
+.mp-bar-video .mp-ico {
+  color: #fff;
+}
+.mp-bar-video .mp-time {
+  color: rgba(255, 255, 255, 0.85);
+}
+.mp-bar-video .mp-volume {
+  display: none; /* gọn cho video, có thể bật lại nếu cần */
+}
+@media (min-width: 640px) {
+  .mp-bar-video .mp-volume {
+    display: block;
+  }
+}
+
+.mp-play-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.mp-play-btn:hover {
+  background: var(--c-accent-strong);
+}
+.mp-play-btn .mi {
+  font-size: 19px;
+}
+
+.mp-ico {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--c-body);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+}
+.mp-ico:hover {
+  background: rgba(128, 128, 128, 0.15);
+}
+.mp-ico .mi {
+  font-size: 22px;
+}
+
+.mp-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-mute);
+  min-width: 34px;
+  text-align: center;
+}
+
+/* Range input dùng chung — bỏ style mặc định trình duyệt, vẽ lại theo hệ thiết kế */
+.mp-seek,
+.mp-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--c-hairline-strong);
+  cursor: pointer;
+  outline: none;
+}
+.mp-seek {
+  flex: 1;
+  min-width: 40px;
+}
+.mp-volume {
+  width: 70px;
+  flex-shrink: 0;
+}
+.mp-seek::-webkit-slider-thumb,
+.mp-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.mp-seek::-moz-range-thumb,
+.mp-volume::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+/* ---------- Audio ---------- */
+.mp-audio-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-lg);
+  padding: var(--s-xl);
+  background: linear-gradient(180deg, var(--c-surface-soft), var(--c-surface-card, #fff));
+}
+.mp-audio-art {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--c-accent), var(--c-accent-strong));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px var(--c-accent-soft);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.mp-audio-art .mi {
+  font-size: 40px;
+  color: var(--c-on-accent);
+}
+/* Bìa nhạc (ID3/embedded art) khi có — thay cho icon mặc định. */
+.mp-audio-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mp-audio-title {
+  max-width: 320px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp-bar-audio {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Panel chi tiết hẹp -> gọn bớt khoảng đệm */
+:host-context(.dp-preview) .mp-audio-card {
+  padding: var(--s-md);
+  gap: var(--s-sm);
+}
+:host-context(.dp-preview) .mp-audio-art {
+  width: 56px;
+  height: 56px;
+}
+:host-context(.dp-preview) .mp-audio-art .mi {
+  font-size: 24px;
+}

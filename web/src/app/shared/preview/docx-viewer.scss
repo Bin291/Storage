@@ -1,0 +1,53 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.dv-scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: var(--c-surface-soft);
+}
+
+.dv-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-sm);
+  color: var(--c-body);
+  min-height: 200px;
+  margin: auto;
+}
+.dv-state.error .mi {
+  font-size: 32px;
+  color: var(--c-danger);
+}
+.dv-state p {
+  max-width: 320px;
+  text-align: center;
+  font-size: var(--fs-body-sm);
+}
+
+.dv-doc {
+  width: 100%;
+}
+.dv-doc.hidden {
+  display: none;
+}
+
+/*
+ * docx-preview tự bọc kết quả trong "<className>-wrapper" + tự chèn <style>
+ * cho khoảng cách/bóng đổ giữa các trang (xem renderAsync options.className
+ * ở docx-viewer.ts = "docx-render" -> class thực tế "docx-render-wrapper").
+ * Chỉ override đúng màu nền cho khớp token thiết kế — DOM này chèn trực tiếp
+ * qua renderAsync() (ngoài compiler Angular) nên phải dùng ::ng-deep mới style
+ * được (không mang attribute scope-encapsulation).
+ */
+:host ::ng-deep .docx-render-wrapper {
+  background: var(--c-surface-soft) !important;
+  padding: var(--s-xl) var(--s-lg) !important;
+}

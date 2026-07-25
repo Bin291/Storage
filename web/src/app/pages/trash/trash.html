@@ -1,0 +1,122 @@
+<section class="page">
+  <div class="head">
+    <h1>Thùng rác</h1>
+    <button
+      class="btn btn-danger btn-sm"
+      [disabled]="items().length === 0"
+      (click)="openEmptyModal()"
+    >
+      <span class="mi sm">delete_forever</span> Dọn thùng rác
+    </button>
+  </div>
+  <p class="lead muted">
+    Mục trong Thùng rác được giữ lại một thời gian trước khi tự động xoá vĩnh
+    viễn. Khôi phục bất cứ lúc nào trước đó.
+  </p>
+
+  @if (loading()) {
+    <div class="state"><span class="spinner"></span> Đang tải…</div>
+  } @else if (error()) {
+    <div class="state empty">
+      <div class="mi emoji">error</div>
+      <p>{{ error() }}</p>
+      <button type="button" class="btn" (click)="load()">Thử lại</button>
+    </div>
+  } @else if (items().length === 0) {
+    <div class="state empty">
+      <div class="mi emoji">delete_outline</div>
+      <p>Thùng rác trống.</p>
+    </div>
+  } @else {
+    <table class="list">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Tên</th>
+          <th>Đã xoá</th>
+          <th>Còn lại</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (it of items(); track it.kind + ':' + it.id) {
+          <tr class="row">
+            <td class="c-ico">
+              <span class="mi list-ico">{{
+                it.kind === 'folder' ? 'folder' : iconForExtension(it.extension ?? '')
+              }}</span>
+            </td>
+            <td class="c-name">{{ it.name }}</td>
+            <td class="c-date">{{ formatDate(it.deletedAt) }}</td>
+            <td class="c-left">
+              @if (it.daysUntilPurge <= 0) {
+                <span class="soon">sắp xoá</span>
+              } @else {
+                {{ it.daysUntilPurge }} ngày
+              }
+            </td>
+            <td class="c-actions">
+              <button
+                class="btn btn-ghost btn-sm"
+                [disabled]="busyId() === it.kind + ':' + it.id"
+                (click)="restore(it)"
+              >
+                <span class="mi sm">restore_from_trash</span> Khôi phục
+              </button>
+              <button
+                class="btn btn-icon btn-secondary"
+                title="Xoá vĩnh viễn"
+                [disabled]="busyId() === it.kind + ':' + it.id"
+                (click)="openHardDelete(it)"
+              >
+                <span class="mi sm">delete_forever</span>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+@if (deleteTarget(); as t) {
+  <app-modal title="Xoá vĩnh viễn" (close)="closeHardDelete()">
+    <p>
+      Xoá vĩnh viễn <strong>{{ t.name }}</strong>? Hành động này
+      <strong>không thể hoàn tác</strong>.
+    </p>
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeHardDelete()">Huỷ</button>
+      <button class="btn btn-danger" [disabled]="busyId() !== null" (click)="confirmHardDelete()">
+        Xoá vĩnh viễn
+      </button>
+    </div>
+  </app-modal>
+}
+
+@if (emptyModalOpen()) {
+  <app-modal title="Dọn thùng rác" (close)="closeEmptyModal()">
+    <p>
+      Xoá vĩnh viễn toàn bộ <strong>{{ items().length }}</strong> mục trong
+      Thùng rác? Hành động này <strong>không thể hoàn tác</strong>.
+    </p>
+    <p class="confirm-hint">Gõ <strong>XOÁ</strong> để xác nhận:</p>
+    <input
+      class="input"
+      [ngModel]="emptyConfirmText()"
+      (ngModelChange)="emptyConfirmText.set($event)"
+      (keyup.enter)="confirmEmpty()"
+      autofocus
+    />
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeEmptyModal()">Huỷ</button>
+      <button
+        class="btn btn-danger"
+        [disabled]="!canConfirmEmpty || emptyBusy()"
+        (click)="confirmEmpty()"
+      >
+        Dọn thùng rác
+      </button>
+    </div>
+  </app-modal>
+}

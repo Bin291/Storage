@@ -1,0 +1,573 @@
+<div class="explorer">
+  <!-- Main -->
+  <section class="main">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="crumbs">
+        @if (lens() === 'folder') {
+          <a routerLink="/files" class="crumb">My Storage</a>
+          @for (node of breadcrumb(); track node.id; let last = $last) {
+            <span class="sep">/</span>
+            @if (last) {
+              <span class="crumb current">{{ node.name }}</span>
+            } @else {
+              <a [routerLink]="['/folder', node.id]" class="crumb">{{ node.name }}</a>
+            }
+          }
+        } @else {
+          <span class="crumb current lens-title">
+            <span class="mi sm lens-ico">{{ titleIcon() }}</span>{{ title() }}
+          </span>
+        }
+      </div>
+
+      @if (hasSelection()) {
+        <!-- Thanh chọn nhiều (mục 11.J) — thay chỗ toolbar bình thường -->
+        <div class="selection-bar">
+          <button class="btn btn-ghost btn-icon" title="Bỏ chọn" (click)="clearSelection()">
+            <span class="mi sm">close</span>
+          </button>
+          <span class="selection-count">{{ selectionCount() }} đã chọn</span>
+          <button class="btn btn-ghost btn-sm" (click)="selectAll()">Chọn tất cả</button>
+          <button class="btn btn-danger btn-sm" (click)="openBulkDelete()">
+            <span class="mi sm">delete</span> Xoá
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="downloadSelected()">
+            <span class="mi sm">download</span> Tải xuống (.zip)
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Content -->
+    <div
+      class="content"
+    >
+      @if (loading()) {
+        <div class="state"><span class="spinner"></span> Đang tải…</div>
+      } @else if (error() && files().length === 0 && subfolders().length === 0) {
+        <div class="state empty">
+          <div class="mi emoji">error</div>
+          <p>{{ error() }}</p>
+          <button type="button" class="btn" (click)="retryReload()">Thử lại</button>
+        </div>
+      } @else if (isEmpty()) {
+        <div class="state empty">
+          <div class="mi emoji">folder_off</div>
+          @switch (lens()) {
+            @case ('starred') { <p>Chưa có mục nào được gắn sao.</p> }
+            @case ('recent') { <p>Chưa có tệp nào gần đây.</p> }
+            @case ('type') { <p>Không có tệp nào thuộc loại này.</p> }
+            @default { <p>Thư mục trống.</p> }
+          }
+        </div>
+      } @else if (prefs.mode() === 'grid') {
+        <!-- GRID: chỉ hình + tên, không khung card (mục 11.H / 11.G) -->
+        <div
+          class="grid"
+          [class.compact]="prefs.density() === 'compact'"
+          (click)="onSurfaceClick($event)"
+        >
+          @for (f of subfolders(); track f.id) {
+            <div
+              class="tile folder"
+              [class.selected]="isSelected('folder', f.id) || isActive('folder', f.id)"
+              (click)="onItemClick('folder', f, $event)"
+              (dblclick)="openFolder(f.id)"
+              (contextmenu)="onContextMenu('folder', f, $event)"
+            >
+              <div class="tile-preview">
+                <span class="mi tile-glyph fill">folder</span>
+                <div class="tile-overlay">
+                  <label class="tile-check" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      [checked]="isSelected('folder', f.id)"
+                      (change)="toggleSelect('folder', f.id)"
+                    />
+                  </label>
+                </div>
+              </div>
+              <div class="tile-title" [title]="f.name">{{ f.name }}</div>
+            </div>
+          }
+          @for (file of files(); track file.id) {
+            <div
+              class="tile"
+              [class.selected]="detail()?.id === file.id || isSelected('file', file.id) || isActive('file', file.id)"
+              (click)="onItemClick('file', file, $event)"
+              (dblclick)="openPreview(file)"
+              (contextmenu)="onContextMenu('file', file, $event)"
+            >
+              <div class="tile-preview" [class.clickable]="file.status === 'ready'">
+                @if (file.thumbnailUrl) {
+                  <img [src]="file.thumbnailUrl" [alt]="file.name" loading="lazy" />
+                } @else {
+                  <span class="mi tile-glyph">{{ iconForExtension(file.extension) }}</span>
+                }
+                <div class="tile-overlay">
+                  <label class="tile-check" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      [checked]="isSelected('file', file.id)"
+                      (change)="toggleSelect('file', file.id)"
+                    />
+                  </label>
+                </div>
+                @if (file.status !== 'ready') {
+                  <span class="tile-badge" [class.failed]="file.status === 'failed'">
+                    {{ file.status === 'failed' ? 'lỗi' : 'đang xử lý' }}
+                  </span>
+                }
+              </div>
+              <div class="tile-title" [title]="file.name">{{ file.name }}</div>
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- LIST (mục 11.G) -->
+        <table class="list" (click)="onSurfaceClick($event)">
+          <thead>
+            <tr>
+              <th class="c-check">
+                @if (!isEmpty()) {
+                  <input
+                    type="checkbox"
+                    [checked]="hasSelection() && selectionCount() === orderedItemsCount()"
+                    (change)="hasSelection() ? clearSelection() : selectAll()"
+                  />
+                }
+              </th>
+              <th></th>
+              <th>Tên</th>
+              <th>Lần sửa đổi</th>
+              <th>Dung lượng</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of subfolders(); track f.id) {
+              <tr
+                class="row folder"
+                [class.selected]="isSelected('folder', f.id) || isActive('folder', f.id)"
+                (click)="onItemClick('folder', f, $event)"
+                (dblclick)="openFolder(f.id)"
+                (contextmenu)="onContextMenu('folder', f, $event)"
+              >
+                <td class="c-check" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="isSelected('folder', f.id)" (change)="toggleSelect('folder', f.id)" />
+                </td>
+                <td class="c-ico"><span class="mi folder-glyph fill">folder</span></td>
+                <td class="c-name">{{ f.name }}</td>
+                <td class="c-date">{{ formatDate(f.updatedAt) }}</td>
+                <td class="c-size">Chưa được tính</td>
+                <td class="c-actions">
+                  <button class="star" [class.on]="f.isStarred" (click)="toggleStar('folder', f); $event.stopPropagation()">
+                    <span class="mi sm" [class.fill]="f.isStarred">star</span>
+                  </button>
+                  <button class="menu-btn" title="Hành động" (click)="openMenu('folder', f, $event); $event.stopPropagation()">
+                    <span class="mi">more_vert</span>
+                  </button>
+                </td>
+              </tr>
+            }
+            @for (file of files(); track file.id) {
+              <tr
+                class="row"
+                [class.selected]="detail()?.id === file.id || isSelected('file', file.id) || isActive('file', file.id)"
+                (click)="onItemClick('file', file, $event)"
+                (dblclick)="openPreview(file)"
+                (contextmenu)="onContextMenu('file', file, $event)"
+              >
+                <td class="c-check" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="isSelected('file', file.id)" (change)="toggleSelect('file', file.id)" />
+                </td>
+                <td class="c-ico">
+                  @if (file.thumbnailUrl) {
+                    <img class="thumb" [src]="file.thumbnailUrl" [alt]="file.name" loading="lazy" />
+                  } @else {
+                    <span class="mi list-ico">{{ iconForExtension(file.extension) }}</span>
+                  }
+                </td>
+                <td class="c-name">
+                  <span class="cn-name">{{ file.name }}</span>
+                  @if (file.status !== 'ready') {
+                    <span class="badge" [class.failed]="file.status === 'failed'">
+                      {{ file.status === 'failed' ? 'lỗi' : 'đang xử lý' }}
+                    </span>
+                  }
+                </td>
+                <td class="c-date">{{ formatDate(file.updatedAt) }}</td>
+                <td class="c-size">{{ formatSize(file.size) }}</td>
+                <td class="c-actions">
+                  <button class="star" [class.on]="file.isStarred" (click)="toggleStar('file', file); $event.stopPropagation()">
+                    <span class="mi sm" [class.fill]="file.isStarred">star</span>
+                  </button>
+                  <button class="menu-btn" title="Hành động" (click)="openMenu('file', file, $event); $event.stopPropagation()">
+                    <span class="mi">more_vert</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </section>
+
+  <!-- Panel chi tiết bên phải (tham chiếu hình 35-36) -->
+  @if (detail(); as d) {
+    <aside class="detail-panel">
+      <div class="dp-head">
+        <span class="dp-eyebrow">Chi tiết</span>
+        <button class="dp-close" title="Đóng" (click)="closeDetail(); activeKey.set(null)"><span class="mi sm">close</span></button>
+      </div>
+
+      <div class="dp-actions">
+        <button [class.on]="d.isStarred" title="Gắn sao" (click)="toggleStar('file', d)">
+          <span class="mi sm" [class.fill]="d.isStarred">star</span>
+        </button>
+        <button title="Đổi tên" (click)="openRename('file', d.id, d.name)">
+          <span class="mi sm">edit</span>
+        </button>
+        <button title="Chuyển" (click)="openMove('file', d.id, d.name)">
+          <span class="mi sm">drive_file_move</span>
+        </button>
+        <button title="Tải xuống" [disabled]="d.status !== 'ready'" (click)="downloadFile(d)">
+          <span class="mi sm">download</span>
+        </button>
+        <button class="danger" title="Xoá" (click)="openDelete('file', d.id, d.name)">
+          <span class="mi sm">delete</span>
+        </button>
+      </div>
+
+      <div
+        class="dp-preview"
+        [class.clickable]="canPreview(d) && d.status === 'ready'"
+        (click)="openPreview(d)"
+      >
+        @if (detailKind() === 'image' && detailUrl()) {
+          <img [src]="detailUrl()!" [alt]="d.name" />
+        } @else if (d.thumbnailUrl) {
+          <img [src]="d.thumbnailUrl" [alt]="d.name" />
+        } @else if (detailUrl() === null && needsDetailUrl(detailKind()) && canPreview(d) && d.status === 'ready') {
+          <span class="spinner"></span>
+        } @else {
+          <span class="mi big-ico">{{ iconForExtension(d.extension) }}</span>
+        }
+        @if (canPreview(d) && d.status === 'ready') {
+          <span class="dp-open-hint">Bấm để xem</span>
+        }
+      </div>
+
+      @if (canRetryThumbnail(d)) {
+        <button
+          class="dp-thumb-retry"
+          type="button"
+          [disabled]="retryingThumbnail()"
+          (click)="retryThumbnail(d); $event.stopPropagation()"
+        >
+          <span class="mi sm">refresh</span>
+          {{ retryingThumbnail() ? 'Đang tạo…' : 'Tạo ảnh xem trước' }}
+        </button>
+      }
+
+      <div class="dp-name" [title]="d.name">{{ d.name }}</div>
+      <div class="dp-sub">{{ d.extension ? d.extension.toUpperCase() + ' · ' : '' }}{{ formatSize(d.size) }}</div>
+
+      @if (d.status !== 'ready') {
+        <div class="dp-banner" [class.failed]="d.status === 'failed'">
+          <span>{{ d.status === 'failed' ? 'Xử lý thất bại' : 'Đang xử lý nội dung…' }}</span>
+          @if (d.status === 'failed') {
+            <button (click)="retryFile(d)">Thử lại</button>
+          }
+        </div>
+      }
+
+      <div class="dp-info">
+        <div class="dp-title">Thông tin</div>
+        <div class="dp-row"><span>Loại</span><b>{{ d.extension ? d.extension.toUpperCase() : '—' }}</b></div>
+        <div class="dp-row"><span>Dung lượng</span><b>{{ formatSize(d.size) }}</b></div>
+        <div class="dp-row"><span>Lần sửa đổi</span><b>{{ formatDate(d.updatedAt) }}</b></div>
+        <div class="dp-row">
+          <span>Trạng thái</span>
+          <b>{{ d.status === 'ready' ? 'Sẵn sàng' : d.status === 'failed' ? 'Lỗi' : 'Đang xử lý' }}</b>
+        </div>
+      </div>
+    </aside>
+  }
+</div>
+
+<!-- Modals -->
+@if (modal() === 'rename') {
+  <app-modal title="Đổi tên" (close)="closeModal()">
+    <input class="input" [ngModel]="nameInput()" (ngModelChange)="nameInput.set($event)" (keyup.enter)="confirmRename()" />
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeModal()">Huỷ</button>
+      <button class="btn btn-primary" [disabled]="busy()" (click)="confirmRename()">Lưu</button>
+    </div>
+  </app-modal>
+}
+
+@if (modal() === 'delete') {
+  <app-modal title="Xoá" (close)="closeModal()">
+    <p>
+      Chuyển <strong>{{ selected()?.name }}</strong> vào Thùng rác? Có thể khôi
+      phục lại bất cứ lúc nào trước khi dọn thùng rác.
+    </p>
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeModal()">Huỷ</button>
+      <button class="btn btn-danger" [disabled]="busy()" (click)="confirmDelete()">Xoá</button>
+    </div>
+  </app-modal>
+}
+
+@if (bulkDeleteOpen()) {
+  <app-modal title="Xoá" (close)="closeBulkDelete()">
+    <p>
+      Chuyển <strong>{{ selectionCount() }}</strong> mục đã chọn vào Thùng rác?
+      Có thể khôi phục lại bất cứ lúc nào trước khi dọn thùng rác.
+    </p>
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeBulkDelete()">Huỷ</button>
+      <button class="btn btn-danger" [disabled]="bulkDeleteBusy()" (click)="confirmBulkDelete()">Xoá</button>
+    </div>
+  </app-modal>
+}
+
+@if (propertiesFile(); as pf) {
+  <app-modal title="Thuộc tính" (close)="closeProperties()">
+    <div class="props">
+      <div class="prop-row"><span>Tên</span><b [title]="pf.name">{{ pf.name }}</b></div>
+      <div class="prop-row"><span>Loại</span><b>{{ pf.extension ? pf.extension.toUpperCase() : '—' }}</b></div>
+      <div class="prop-row"><span>Dung lượng</span><b>{{ formatSize(pf.size) }}</b></div>
+      <div class="prop-row"><span>Lần sửa đổi</span><b>{{ formatDate(pf.updatedAt) }}</b></div>
+      @if (crossFolder()) {
+        <div class="prop-row loc">
+          <span>Vị trí</span>
+          <span class="path-crumbs">
+            <a routerLink="/files" class="pc" (click)="closeProperties()">My Storage</a>
+            @for (n of pf.folderPath; track n.id) {
+              <span class="pc-sep">›</span>
+              <a [routerLink]="['/folder', n.id]" class="pc" (click)="closeProperties()">{{ n.name }}</a>
+            }
+          </span>
+        </div>
+      }
+    </div>
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeProperties()">Đóng</button>
+    </div>
+  </app-modal>
+}
+
+@if (modal() === 'move') {
+  <app-modal title="Chuyển tới…" (close)="closeModal()">
+    <div class="picker">
+      <div class="picker-bar">
+        <button class="btn btn-ghost btn-sm" [disabled]="pickerPath().length === 0" (click)="pickerUp()">↑ Lên</button>
+        <span class="picker-loc">{{ pickerPath().length ? pickerPath()[pickerPath().length - 1].name : 'My Storage' }}</span>
+      </div>
+      <div class="picker-list">
+        @for (pf of pickerFolders(); track pf.id) {
+          <button class="picker-item" (click)="pickerEnter(pf)">
+            <span class="mi sm fill">folder</span> {{ pf.name }}
+          </button>
+        }
+        @if (pickerFolders().length === 0) {
+          <span class="picker-empty">Không có thư mục con</span>
+        }
+      </div>
+    </div>
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeModal()">Huỷ</button>
+      <button class="btn btn-primary" [disabled]="busy()" (click)="confirmMove()">Chuyển vào đây</button>
+    </div>
+  </app-modal>
+}
+
+<!-- Upload progress panel (mục 5.A / 9.5) -->
+@if (upload.tasks().length > 0) {
+  <div class="upload-panel card">
+    <div class="up-head">
+      <span>Tải lên ({{ upload.tasks().length }})</span>
+      <button class="up-clear" (click)="upload.clearDone()">Dọn</button>
+    </div>
+    <div class="up-list">
+      @for (t of upload.tasks(); track t.id) {
+        <div class="up-item">
+          <div class="up-row">
+            <span class="up-name" [title]="t.name">{{ t.name }}</span>
+            <span class="up-status" [class.err]="t.status === 'error'">
+              @switch (t.status) {
+                @case ('preparing') { chuẩn bị }
+                @case ('uploading') { {{ t.progress }}% }
+                @case ('processing') { đang xử lý }
+                @case ('done') { ✓ }
+                @case ('error') { lỗi }
+              }
+            </span>
+          </div>
+          <div class="up-bar">
+            <div class="up-fill" [style.width.%]="t.status === 'done' ? 100 : t.progress"></div>
+          </div>
+          @if (t.error) { <span class="up-err">{{ t.error }}</span> }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Panel tiến trình nén zip hàng loạt (mục 11.J) -->
+@if (zipTasks().length > 0) {
+  <div class="zip-panel card">
+    @for (t of zipTasks(); track t.jobId) {
+      <div class="up-item">
+        <div class="up-row">
+          <span class="up-name">{{ t.count }} mục đã chọn</span>
+          <button class="up-clear" title="Đóng" (click)="dismissZipTask(t.jobId)">
+            <span class="mi sm">close</span>
+          </button>
+        </div>
+        @switch (t.status) {
+          @case ('preparing') {
+            <div class="zip-status"><span class="spinner"></span> Đang nén…</div>
+          }
+          @case ('ready') {
+            <button class="btn btn-primary btn-sm zip-dl" (click)="downloadZipResult(t)">
+              <span class="mi sm">download</span> Tải xuống ngay
+            </button>
+          }
+          @case ('error') {
+            <div class="zip-status err">{{ t.error || 'Nén thất bại' }}</div>
+          }
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- Dropdown menu hành động — render Ở GỐC (fixed) để không bị card:hover cắt -->
+@if (menu(); as m) {
+  <div class="menu-backdrop" (click)="closeMenu()"></div>
+  <div class="menu" [style.top.px]="menuPos().top" [style.left.px]="menuPos().left">
+    @if (m.kind === 'file' && m.file; as f) {
+      @if (canPreview(f)) {
+        <button [disabled]="f.status !== 'ready'" (click)="openPreview(f)">
+          <span class="mi sm">visibility</span> Xem trước
+        </button>
+      }
+      @if (f.status === 'failed') {
+        <button (click)="retryFile(f)" [title]="f.errorMessage || ''">
+          <span class="mi sm">refresh</span> Thử lại
+        </button>
+      }
+      <button [disabled]="f.status !== 'ready'" (click)="downloadFile(f)">
+        <span class="mi sm">download</span> Tải xuống
+      </button>
+      <button (click)="toggleStar('file', f); closeMenu()">
+        <span class="mi sm" [class.fill]="f.isStarred">star</span>
+        {{ f.isStarred ? 'Bỏ gắn dấu sao' : 'Gắn dấu sao' }}
+      </button>
+      <button (click)="openRename('file', f.id, f.name)">
+        <span class="mi sm">edit</span> Đổi tên
+      </button>
+      <button (click)="openMove('file', f.id, f.name)">
+        <span class="mi sm">drive_file_move</span> Chuyển
+      </button>
+      <button (click)="openProperties(f)">
+        <span class="mi sm">info</span> Thuộc tính
+      </button>
+      <button class="danger" (click)="openDelete('file', f.id, f.name)">
+        <span class="mi sm">delete</span> Xoá
+      </button>
+    } @else if (m.folder; as fo) {
+      <button (click)="toggleStar('folder', fo); closeMenu()">
+        <span class="mi sm" [class.fill]="fo.isStarred">star</span>
+        {{ fo.isStarred ? 'Bỏ gắn dấu sao' : 'Gắn dấu sao' }}
+      </button>
+      <button (click)="openRename('folder', fo.id, fo.name)">
+        <span class="mi sm">edit</span> Đổi tên
+      </button>
+      <button (click)="openMove('folder', fo.id, fo.name)">
+        <span class="mi sm">drive_file_move</span> Chuyển
+      </button>
+      <button class="danger" (click)="openDelete('folder', fo.id, fo.name)">
+        <span class="mi sm">delete</span> Xoá
+      </button>
+    }
+  </div>
+}
+
+<!-- Menu ngữ cảnh cho lựa chọn nhiều — chuột phải lên 1 mục đã chọn (>1 mục) -->
+@if (bulkMenuOpen()) {
+  <div class="menu-backdrop" (click)="closeBulkMenu()"></div>
+  <div class="menu" [style.top.px]="bulkMenuPos().top" [style.left.px]="bulkMenuPos().left">
+    <button (click)="closeBulkMenu(); downloadSelected()">
+      <span class="mi sm">download</span> Tải xuống ({{ selectionCount() }}) (.zip)
+    </button>
+    <button class="danger" (click)="closeBulkMenu(); openBulkDelete()">
+      <span class="mi sm">delete</span> Xoá ({{ selectionCount() }})
+    </button>
+  </div>
+}
+
+<!-- Preview đầy đủ (mục 2.2 / 11.I) — full-bleed kiểu Google Drive: nền mờ
+     (backdrop blur), lướt qua lại giữa các file bằng mũi tên/phím ←/→. -->
+@if (previewFile(); as pf) {
+  <div class="preview-overlay" (click)="closePreview()">
+    <div class="preview-top" (click)="$event.stopPropagation()">
+      <span class="preview-title" [title]="pf.name">{{ pf.name }}</span>
+      <div class="preview-tools">
+        <button class="btn btn-secondary btn-sm" (click)="downloadFile(pf)">
+          <span class="mi sm">download</span> Tải xuống
+        </button>
+        <button class="btn btn-ghost btn-icon" (click)="closePreview()"><span class="mi sm">close</span></button>
+      </div>
+    </div>
+
+    @if (canPreviewPrev()) {
+      <button
+        class="preview-nav prev"
+        title="Tệp trước (←)"
+        (click)="previewPrev(); $event.stopPropagation()"
+      >
+        <span class="mi">chevron_left</span>
+      </button>
+    }
+    @if (canPreviewNext()) {
+      <button
+        class="preview-nav next"
+        title="Tệp sau (→)"
+        (click)="previewNext(); $event.stopPropagation()"
+      >
+        <span class="mi">chevron_right</span>
+      </button>
+    }
+
+    <div class="preview-body" (click)="$event.stopPropagation()">
+      @if (needsUrl(previewKind()) && !previewUrl()) {
+        <div class="state"><span class="spinner"></span> Đang mở…</div>
+      } @else if (previewKind() === 'image') {
+        <app-image-viewer [url]="previewUrl()!" [alt]="pf.name" />
+      } @else if (previewKind() === 'pdf') {
+        <iframe [src]="previewUrl()! | safeUrl" title="preview"></iframe>
+      } @else if (previewKind() === 'audio' || previewKind() === 'video') {
+        <app-media-player
+          [kind]="previewKind() === 'audio' ? 'audio' : 'video'"
+          [url]="previewUrl()!"
+          [title]="pf.name"
+          [poster]="pf.thumbnailUrl"
+        />
+      } @else if (previewKind() === 'docx') {
+        <app-docx-viewer [fileId]="pf.id" />
+      } @else if (previewKind() === 'sheet') {
+        <app-sheet-viewer [fileId]="pf.id" />
+      } @else if (previewKind() === 'text-raw') {
+        <app-text-viewer [fileId]="pf.id" [mode]="'raw'" />
+      } @else if (previewKind() === 'text-extract') {
+        <app-text-viewer [fileId]="pf.id" [mode]="'extract'" />
+      }
+    </div>
+  </div>
+}

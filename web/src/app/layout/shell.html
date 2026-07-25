@@ -1,0 +1,92 @@
+<div class="shell">
+  <header class="topnav">
+    <a class="brand" routerLink="/">
+      <span class="mark">◇</span>
+      <span class="wordmark">storage</span>
+    </a>
+
+    <div class="search-bar">
+      <span class="mi search-ico">search</span>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Tìm kiếm tệp bằng AI..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        (keyup.enter)="triggerSearch()"
+      />
+    </div>
+
+    <div class="right">
+      @if (toolbar.showFilters()) {
+        <div class="topnav-actions">
+          @if (toolbar.isBrowse()) {
+            <select class="select" (change)="toolbar.onCategoryChange($any($event.target).value)">
+              @for (c of categories; track c.value) {
+                <option [value]="c.value" [selected]="toolbar.category() === c.value">{{ c.label }}</option>
+              }
+            </select>
+          }
+
+          <div class="sort-group">
+            <button class="btn btn-ghost btn-sm" (click)="toolbar.setSort('name')">
+              Tên{{ toolbar.sort() === 'name' ? (toolbar.order() === 'asc' ? ' ↑' : ' ↓') : '' }}
+            </button>
+            <button class="btn btn-ghost btn-sm" (click)="toolbar.setSort('updatedAt')">
+              Ngày{{ toolbar.sort() === 'updatedAt' ? (toolbar.order() === 'asc' ? ' ↑' : ' ↓') : '' }}
+            </button>
+            <button class="btn btn-ghost btn-sm" (click)="toolbar.setSort('size')">
+              Cỡ{{ toolbar.sort() === 'size' ? (toolbar.order() === 'asc' ? ' ↑' : ' ↓') : '' }}
+            </button>
+          </div>
+
+          <button
+            class="btn btn-icon btn-secondary btn-sm"
+            [disabled]="toolbar.retryingAllThumbnails()"
+            [title]="
+              toolbar.retryAllThumbnailsResult() !== null
+                ? 'Đã xếp hàng ' + toolbar.retryAllThumbnailsResult() + ' tệp'
+                : 'Tạo lại ảnh xem trước còn thiếu (docx/pdf/bảng tính/audio cũ)'
+            "
+            (click)="toolbar.onRetryMissing ? toolbar.onRetryMissing() : null"
+          >
+            <span class="mi sm">{{ toolbar.retryingAllThumbnails() ? 'hourglass_empty' : 'auto_fix_high' }}</span>
+          </button>
+
+          <button
+            class="btn btn-icon btn-secondary btn-sm"
+            (click)="prefs.toggleMode()"
+            [title]="prefs.mode() === 'grid' ? 'Chuyển sang danh sách' : 'Chuyển sang lưới'"
+          >
+            <span class="mi sm">{{ prefs.mode() === 'grid' ? 'view_list' : 'grid_view' }}</span>
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="body">
+    <app-nav-sidebar />
+    <!-- Kéo-thả CHỈ trong khu vực nội dung này (mục phản hồi UI) — không còn
+         bắt toàn màn hình (kể cả đè lên sidebar/topnav). -->
+    <main
+      class="content"
+      (dragenter)="onDragEnter($event)"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <router-outlet />
+
+      @if (dragActive()) {
+        <div class="drop-overlay">
+          <div class="drop-overlay-inner">
+            <span class="mi drop-ico">cloud_upload</span>
+            <p class="drop-title">Thả tệp hoặc thư mục vào đây để tải lên</p>
+            <p class="drop-sub">{{ dropTargetIsRoot() ? 'Tải vào My Storage' : 'Tải vào thư mục hiện tại' }}</p>
+          </div>
+        </div>
+      }
+    </main>
+  </div>
+</div>

@@ -1,0 +1,122 @@
+<nav class="nav-sidebar">
+  <!-- Nút "+ Mới" — kiểu Google Drive, đứng trên cùng sidebar (mục 11.H) -->
+  <div class="new-wrap">
+    <button class="btn btn-primary new-btn" (click)="toggleNewMenu()">
+      <span class="mi sm">add</span> Mới
+    </button>
+
+    @if (newMenuOpen()) {
+      <div class="menu-backdrop" (click)="closeNewMenu()"></div>
+      <div class="menu new-menu">
+        <button (click)="openNewFolderModal()">
+          <span class="mi sm">create_new_folder</span> Thư mục mới
+        </button>
+        <div class="menu-divider"></div>
+        <button (click)="closeNewMenu(); fileInput.click()">
+          <span class="mi sm">upload_file</span> {{ uploadLabel() }}
+        </button>
+        <button (click)="closeNewMenu(); folderInput.click()">
+          <span class="mi sm">drive_folder_upload</span> Tải thư mục lên
+        </button>
+      </div>
+    }
+  </div>
+  <input #fileInput type="file" multiple hidden [accept]="uploadAccept()" (change)="onPickFiles($event)" />
+  <input #folderInput type="file" webkitdirectory hidden (change)="onPickFolder($event)" />
+
+  <!-- Landing -->
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item home">
+    <span class="mi sm ico">home</span> Trang chủ
+  </a>
+
+  <!-- Lăng kính THƯ MỤC -->
+  <div class="section-label">Duyệt</div>
+  <a routerLink="/files" class="nav-item" [class.active]="browseActive()">
+    <span class="mi sm ico">cloud</span> My Storage
+  </a>
+  <a routerLink="/starred" routerLinkActive="active" class="nav-item">
+    <span class="mi sm ico">star</span> Có gắn dấu sao
+  </a>
+  <a routerLink="/recent" routerLinkActive="active" class="nav-item">
+    <span class="mi sm ico">schedule</span> Gần đây
+  </a>
+  <a routerLink="/trash" routerLinkActive="active" class="nav-item">
+    <span class="mi sm ico">delete</span> Thùng rác
+  </a>
+
+  <div class="tree">
+    @for (f of rootFolders(); track f.id) {
+      <app-folder-tree-node [folder]="f" [activeId]="activeFolderId()" />
+    }
+    @if (rootFolders().length === 0) {
+      <span class="tree-empty">Chưa có thư mục</span>
+    }
+  </div>
+
+  <!-- Lăng kính LOẠI -->
+  <div class="section-label">Theo loại</div>
+  <div class="type-groups">
+    @for (g of stats.groups(); track g.def.id) {
+      <div class="group">
+        <div class="group-row" [class.active]="activeGroup() === g.def.id && !activeExt()">
+          <button
+            class="twist"
+            [class.open]="isExpanded(g.def.id)"
+            (click)="toggleGroup(g.def.id, $event)"
+            [disabled]="g.extensions.length === 0"
+            aria-label="mở rộng"
+          ><span class="mi sm">keyboard_arrow_right</span></button>
+          <a class="group-label" [routerLink]="['/type', g.def.id]">
+            <span class="mi sm ico">{{ g.def.icon }}</span>
+            <span class="name">{{ g.def.label }}</span>
+            <span class="count">{{ g.count }}</span>
+          </a>
+        </div>
+
+        @if (isExpanded(g.def.id)) {
+          <div class="ext-list">
+            @for (e of g.extensions; track e.extension) {
+              <a
+                class="ext-item"
+                [class.active]="activeExt() === e.extension"
+                [routerLink]="['/type', g.def.id, e.extension]"
+              >
+                <span class="ext-name">{{ e.extension || '—' }}</span>
+                <span class="count">{{ e.count }}</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Profile & Settings Footer -->
+  <div class="sidebar-footer">
+    <div class="profile-footer-container">
+      <a routerLink="/profile" routerLinkActive="active" class="profile-avatar-link" title="Hồ sơ cá nhân">
+        <app-avatar [size]="32" />
+        <span class="username-text">{{ user()?.user_metadata?.['display_name'] || (user()?.email?.split('@')?.[0]) }}</span>
+      </a>
+      <a routerLink="/settings" routerLinkActive="active" class="settings-icon-link" title="Cài đặt">
+        <span class="mi">settings</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+@if (newFolderModalOpen()) {
+  <app-modal title="Thư mục mới" (close)="closeNewFolderModal()">
+    <input
+      class="input"
+      [ngModel]="newFolderName()"
+      (ngModelChange)="newFolderName.set($event)"
+      (keyup.enter)="confirmNewFolder()"
+      autofocus
+    />
+    <div actions>
+      <button class="btn btn-secondary" (click)="closeNewFolderModal()">Huỷ</button>
+      <button class="btn btn-primary" [disabled]="busy()" (click)="confirmNewFolder()">Tạo</button>
+    </div>
+  </app-modal>
+}

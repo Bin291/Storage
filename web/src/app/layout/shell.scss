@@ -1,0 +1,174 @@
+.shell {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-canvas);
+}
+
+.topnav {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-xl);
+  padding: 0 var(--s-xl);
+  border-bottom: 1px solid var(--c-hairline);
+  background: var(--c-canvas);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-sm);
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.brand:hover {
+  text-decoration: none;
+}
+.brand .mark {
+  font-size: 18px;
+}
+
+.search-bar {
+  flex: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-ico {
+  position: absolute;
+  left: var(--s-md);
+  color: var(--c-body);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  height: var(--h-control);
+  padding: 0 var(--s-md) 0 40px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-hairline-strong);
+  background: var(--c-surface-soft);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-sm);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.search-input:focus {
+  background: var(--c-canvas);
+  border-color: var(--c-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-accent-ring);
+}
+
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.topnav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+.topnav-actions .select {
+  height: 30px;
+  padding: 0 var(--s-md);
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-hairline-strong);
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+}
+
+.topnav-actions .sort-group {
+  display: flex;
+  gap: 2px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.content {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Fallback: trang route vào (vd app-dashboard/app-profile) không tự bó
+     chiều cao (host tag không có CSS, không xuyên được encapsulation từ
+     đây) nên tràn ra sẽ cuộn ở đây — topnav/sidebar vẫn đứng yên vì nằm
+     ngoài .content. Trang nào tự lo cuộn nội bộ (vd FilesComponent, xem
+     :host trong files.scss) thì vừa khít .content, rule này không kích hoạt. */
+  overflow-y: auto;
+}
+
+@media (max-width: 720px) {
+  .nav-links {
+    display: none;
+  }
+  .email {
+    display: none;
+  }
+}
+
+/* Kéo-thả tải lên CHỈ trong vùng nội dung (main.content) — không còn phủ
+   toàn màn hình (topnav/sidebar không nhận + không hiện overlay ở đó). */
+.drop-overlay {
+  position: absolute;
+  inset: 12px;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-lg, 16px);
+  border: 2.5px dashed var(--c-accent);
+  background: var(--c-accent-soft);
+  backdrop-filter: blur(2px);
+  pointer-events: none; /* để main.content (ancestor) vẫn nhận dragleave/drop */
+  animation: dropIn 0.12s ease-out;
+}
+.drop-overlay-inner {
+  text-align: center;
+  color: var(--c-accent-strong);
+  user-select: none;
+}
+.drop-ico {
+  font-size: 72px;
+  line-height: 1;
+  display: block;
+  margin: 0 auto var(--s-sm);
+  animation: dropBounce 1s ease-in-out infinite;
+}
+.drop-title {
+  margin: 0;
+  font-size: var(--fs-title, 1.15rem);
+  font-weight: 700;
+}
+.drop-sub {
+  margin: 4px 0 0;
+  font-size: var(--fs-body-sm);
+  opacity: 0.7;
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes dropBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}

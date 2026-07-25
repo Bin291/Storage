@@ -1,0 +1,186 @@
+.settings {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--s-xxl) var(--s-xl) 80px;
+}
+
+.head {
+  margin-bottom: var(--s-xl);
+}
+.eyebrow {
+  font-size: var(--fs-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-accent);
+  font-weight: 600;
+}
+.head h1 {
+  margin: var(--s-xs) 0 var(--s-sm);
+}
+.lede {
+  color: var(--c-body);
+  font-size: var(--fs-body-sm);
+  margin: 0;
+}
+
+.sect {
+  padding: var(--s-xl);
+  margin-top: var(--s-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-lg);
+  flex-wrap: wrap;
+}
+.sect-head h3 {
+  font-size: var(--fs-heading-sm);
+  margin: 0 0 var(--s-xxs);
+}
+.sect-head p {
+  margin: 0;
+  color: var(--c-body);
+  font-size: var(--fs-body-sm);
+}
+
+/* Segmented control */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--r-full);
+  gap: 2px;
+}
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 7px 16px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-body-sm);
+  font-weight: 500;
+  color: var(--c-body);
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.segmented.sm button {
+  padding: 6px 12px;
+  font-size: var(--fs-caption);
+}
+.segmented button:hover {
+  color: var(--c-ink);
+}
+.segmented button.on {
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.seg-ico {
+  font-size: 13px;
+}
+
+/* Accent swatches */
+.swatches {
+  display: flex;
+  gap: var(--s-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.swatch {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.swatch .dot {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-full);
+  background: var(--sw);
+  box-shadow: 0 0 0 2px var(--c-canvas), 0 0 0 2px var(--c-hairline);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.swatch:hover .dot {
+  transform: scale(1.08);
+}
+.swatch.on .dot {
+  box-shadow: 0 0 0 2px var(--c-canvas), 0 0 0 4px var(--sw);
+}
+.sw-label {
+  font-size: 10px;
+  color: var(--c-mute);
+}
+.swatch.on .sw-label {
+  color: var(--c-ink);
+}
+
+/* Rows for grouped options */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-md);
+  align-items: flex-end;
+}
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-md);
+}
+.opt-label {
+  font-size: var(--fs-body-sm);
+  color: var(--c-body);
+}
+
+/* Toggle switch */
+.toggle {
+  width: 46px;
+  height: 27px;
+  border-radius: var(--r-full);
+  border: none;
+  background: var(--c-hairline-strong);
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+.toggle.on {
+  background: var(--c-accent);
+}
+.toggle .knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: var(--r-full);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease;
+}
+.toggle.on .knob {
+  transform: translateX(19px);
+}
+
+.account .btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .sect {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .swatches,
+  .rows {
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+}

@@ -1,0 +1,78 @@
+:host {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.iv-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: zoom-in;
+  touch-action: none; /* chặn pinch/scroll mặc định của trình duyệt, tự xử lý */
+  user-select: none;
+}
+.iv-box.zoomed {
+  cursor: grab;
+}
+.iv-box.zoomed.dragging {
+  cursor: grabbing;
+}
+
+.iv-box img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none; /* kéo/zoom bắt ở .iv-box, ảnh chỉ để hiển thị */
+}
+.iv-box.zoomed img {
+  transition: none;
+}
+
+.iv-toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--s-lg);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-full);
+  background: rgba(23, 23, 23, 0.85);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+}
+.iv-toolbar button {
+  height: 32px;
+  min-width: 32px;
+  padding: 0 var(--s-sm);
+  border: none;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-caption);
+  font-variant-numeric: tabular-nums;
+}
+.iv-toolbar button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+.iv-toolbar button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.iv-pct {
+  min-width: 52px;
+}

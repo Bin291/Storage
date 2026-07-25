@@ -1,0 +1,70 @@
+// Prisma schema cho storage-app — nguồn: PLAN.md mục 7.B.
+// Kết nối trực tiếp Postgres connection string của Supabase (service-role),
+// KHÔNG dùng Postgres RLS — mọi query tự lọc WHERE userId ở tầng app (mục 3).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector] // pgvector, đã bật sẵn trong Supabase (mục 3)
+}
+
+model Folder {
+  id        String    @id @default(uuid())
+  name      String
+  parentId  String? // null = thư mục gốc
+  userId    String
+  isStarred Boolean   @default(false) // gắn dấu sao — mục 11.B
+  status    String    @default("ready") // ready | delete_pending (mục 7.E)
+  deletedAt DateTime? // null = active; có giá trị = trong Thùng rác, khôi phục được (mục 7.E/11.K)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  parent   Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderTree")
+  files    File[]
+
+  @@index([userId, parentId])
+  @@index([userId, deletedAt])
+}
+
+model File {
+  id           String   @id @default(uuid())
+  name         String // "DS_diem_danh.xlsx" — chỉ để hiển thị
+  extension    String // "xlsx", "pdf", "zip", "png"
+  mimeType     String   @default("application/octet-stream")
+  r2Key        String   @unique // "{userId}/{id}" — ID cố định, KHÔNG chứa path (mục 5.A)
+  thumbnailUrl String? // null nếu thumbnail chưa xử lý xong
+  size         BigInt // bytes — BigInt vì Int 32-bit tràn ở trần 2GB (mục 5.D)
+  userId       String // chủ sở hữu
+  folderId     String? // null = nằm ở thư mục gốc
+  status       String    @default("uploading") // uploading | processing | ready | failed | delete_pending
+  errorMessage String? // lý do lỗi khi status = 'failed' (mục 7.B)
+  isStarred    Boolean   @default(false) // gắn dấu sao — mục 11.B
+  deletedAt    DateTime? // null = active; có giá trị = trong Thùng rác, khôi phục được (mục 7.E/11.K)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  folder Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  chunks DocumentChunk[]
+
+  @@index([userId, folderId])
+  @@index([userId, isStarred])
+  @@index([userId, deletedAt])
+}
+
+model DocumentChunk {
+  id         String                       @id @default(uuid())
+  fileId     String
+  content    String // đoạn text ~1000 ký tự/chunk (mục 4.B, 8.C)
+  chunkIndex Int
+  embedding  Unsupported("vector(768)")? // khớp gemini-embedding-001 (mục 8.A)
+
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
+}

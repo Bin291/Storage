@@ -1,0 +1,41 @@
+# Only track web and api, ignore everything else
+/*
+!/.gitignore
+!/web
+!/api
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output
+dist/
+*/dist/
+.angular/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*/.env
+*/.env.*
+!*/.env.example
+
+# Prisma
+api/prisma/*.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+
+# Coverage / temp
+coverage/
+tmp/

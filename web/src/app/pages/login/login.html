@@ -1,0 +1,60 @@
+<main class="auth">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="mark">◇</span>
+      <span class="wordmark">storage</span>
+    </div>
+
+    <h1>{{ mode() === 'signin' ? 'Đăng nhập' : 'Tạo tài khoản' }}</h1>
+    <p class="sub">Kho lưu trữ cá nhân với AI omnisearch.</p>
+
+    <form (ngSubmit)="submit()">
+      <label class="field">
+        <span>Email</span>
+        <input
+          class="input"
+          type="email"
+          autocomplete="email"
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)"
+          name="email"
+          placeholder="ban@example.com"
+        />
+      </label>
+
+      <label class="field">
+        <span>Mật khẩu</span>
+        <input
+          class="input"
+          type="password"
+          [autocomplete]="mode() === 'signin' ? 'current-password' : 'new-password'"
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+          name="password"
+          placeholder="••••••••"
+        />
+      </label>
+
+      @if (error()) {
+        <p class="msg error">{{ error() }}</p>
+      }
+      @if (notice()) {
+        <p class="msg notice">{{ notice() }}</p>
+      }
+
+      <button class="btn btn-primary full" type="submit" [disabled]="loading()">
+        @if (loading()) {
+          <span class="spinner"></span>
+        }
+        {{ mode() === 'signin' ? 'Đăng nhập' : 'Đăng ký' }}
+      </button>
+    </form>
+
+    <p class="toggle">
+      {{ mode() === 'signin' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?' }}
+      <button type="button" class="link" (click)="toggleMode()">
+        {{ mode() === 'signin' ? 'Đăng ký' : 'Đăng nhập' }}
+      </button>
+    </p>
+  </div>
+</main>

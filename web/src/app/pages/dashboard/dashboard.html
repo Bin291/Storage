@@ -1,0 +1,46 @@
+<div class="dash">
+  <header class="dash-head">
+    <h1>Trang chủ</h1>
+    <p class="sub">Tóm tắt kho lưu trữ của bạn</p>
+  </header>
+
+  <!-- Thanh dung lượng (mục 11.E / 11.H) -->
+  <section class="card storage">
+    <div class="storage-top">
+      <div>
+        <span class="storage-used">{{ formatSize(usedBytes()) }}</span>
+        <span class="storage-quota">/ {{ formatSize(quota) }} đã dùng</span>
+      </div>
+      <span class="storage-pct">{{ usedPct() }}%</span>
+    </div>
+    <div class="bar">
+      <div class="fill" [style.width.%]="usedPct()"></div>
+    </div>
+    <p class="storage-count">{{ usage()?.count ?? 0 }} tệp</p>
+  </section>
+
+  <!-- "Gần đây" thu nhỏ — giới hạn cứng 8, KHÔNG phải feed vô tận (mục 11.H) -->
+  <section class="block">
+    <div class="block-head">
+      <h2 class="block-title">Gần đây</h2>
+      <a routerLink="/recent" class="see-all">Xem tất cả →</a>
+    </div>
+    @if (recentLoading()) {
+      <div class="recent-empty"><span class="spinner"></span> Đang tải…</div>
+    } @else if (recent().length === 0) {
+      <div class="recent-empty">Chưa có tệp nào. <a routerLink="/files">Tải lên ngay →</a></div>
+    } @else {
+      <div class="recent-strip">
+        @for (f of recent(); track f.id) {
+          <a class="recent-item" routerLink="/recent" [title]="f.name">
+            <span class="mi ri-ico">{{ iconForExtension(f.extension) }}</span>
+            <span class="ri-body">
+              <span class="ri-name">{{ f.name }}</span>
+              <span class="ri-sub">{{ formatSize(f.size) }} · {{ formatDate(f.updatedAt) }}</span>
+            </span>
+          </a>
+        }
+      </div>
+    }
+  </section>
+</div>
