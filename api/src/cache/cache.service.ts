@@ -26,6 +26,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       host: this.config.get<string>('redis.host'),
       port: this.config.get<number>('redis.port'),
       password: this.config.get<string>('redis.password'),
+      ...(this.config.get<boolean>('redis.tls') ? { tls: {} } : {}),
       maxRetriesPerRequest: null,
       lazyConnect: false,
       // Giãn thời gian thử lại để không spam log khi Redis chưa chạy.

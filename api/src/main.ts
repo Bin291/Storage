@@ -36,8 +36,13 @@ async function bootstrap(): Promise<void> {
   );
 
   const port = config.get<number>('port', 3000);
-  await app.listen(port);
+  // Cloud Run tự set PORT (8080) và gọi container qua 0.0.0.0, KHÔNG qua
+  // localhost. Bind tường minh thay vì dựa mặc định của Nest, và log ra cổng
+  // thật — khi startup probe báo "failed to listen on port 8080" thì dòng log
+  // này cho biết ngay app đang nghe cổng nào (thủ phạm thường là biến PORT
+  // trong .env ghi đè giá trị Cloud Run cấp).
+  await app.listen(port, '0.0.0.0');
   // eslint-disable-next-line no-console
-  console.log(`API chạy tại http://localhost:${port}/api`);
+  console.log(`API lắng nghe 0.0.0.0:${port} — prefix /api`);
 }
 void bootstrap();

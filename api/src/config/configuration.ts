@@ -17,6 +17,9 @@ export default () => ({
     host: process.env.REDIS_HOST ?? '127.0.0.1',
     port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
     password: process.env.REDIS_PASSWORD || undefined,
+    // Redis managed qua internet (Upstash, Redis Cloud, Memorystore có TLS)
+    // bắt buộc mã hoá; Redis local trong docker-compose thì không.
+    tls: process.env.REDIS_TLS === 'true',
   },
 
   // Google Cloud Storage, gọi qua XML API tương thích S3 (Interoperability).

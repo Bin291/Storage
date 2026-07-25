@@ -35,6 +35,7 @@ import { HealthController } from './health.controller';
           host: config.get<string>('redis.host'),
           port: config.get<number>('redis.port'),
           password: config.get<string>('redis.password'),
+          ...(config.get<boolean>('redis.tls') ? { tls: {} } : {}),
           // Giãn thời gian thử lại để không spam log khi Redis chưa chạy.
           retryStrategy: (times: number) => Math.min(times * 1000, 15_000),
         },
