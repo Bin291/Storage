@@ -1,0 +1,145 @@
+<div class="ps-page">
+  <header class="ps-topbar">
+    <span class="ps-brand">
+      <span class="mi">box</span>
+      Storage
+    </span>
+  </header>
+
+  <main class="ps-main">
+    @if (loading() && !meta()) {
+      <p class="ps-state"><span class="spinner"></span> Đang tải…</p>
+    } @else if (error()) {
+      <div class="ps-card ps-center">
+        <span class="mi ps-big-ico">link_off</span>
+        <h2>Không mở được link</h2>
+        <p class="ps-sub">{{ error() }}</p>
+      </div>
+    } @else if (meta()?.requiresPassword) {
+      <!-- Link có mật khẩu: backend chưa trả bất cứ thông tin nào khác (mục 12.E) -->
+      <div class="ps-card ps-center">
+        <span class="mi ps-big-ico">lock</span>
+        <h2>Link được bảo vệ bằng mật khẩu</h2>
+        <p class="ps-sub">Nhập mật khẩu người gửi cung cấp để xem nội dung.</p>
+        <div class="ps-unlock">
+          <input
+            class="input"
+            type="password"
+            placeholder="Mật khẩu"
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event); unlockError.set(null)"
+            (keyup.enter)="unlock()"
+          />
+          <button class="btn btn-primary" [disabled]="unlocking() || !password()" (click)="unlock()">
+            Mở
+          </button>
+        </div>
+        @if (unlockError()) {
+          <p class="ps-error">{{ unlockError() }}</p>
+        }
+      </div>
+    } @else if (meta(); as m) {
+      @if (m.kind === 'file') {
+        <!-- Link chia sẻ 1 tệp: hiện luôn bản xem trước -->
+        <div class="ps-file">
+          <header class="ps-file-head">
+            <div class="ps-file-meta">
+              <span class="mi">{{ iconForExtension(m.extension ?? '') }}</span>
+              <div>
+                <div class="ps-file-name">{{ m.name }}</div>
+                <div class="ps-file-sub">
+                  {{ (m.extension ?? '').toUpperCase() }}
+                  @if (m.size) {
+                    · {{ formatSize(+m.size) }}
+                  }
+                </div>
+              </div>
+            </div>
+            @if (m.allowDownload) {
+              <button class="btn btn-primary btn-sm" (click)="download()">
+                <span class="mi sm">download</span> Tải xuống
+              </button>
+            } @else {
+              <span class="ps-readonly">
+                <span class="mi sm">visibility</span> Chỉ xem
+              </span>
+            }
+          </header>
+
+          <div class="ps-file-body">
+            @if (singleFileSource(); as src) {
+              <app-file-preview [source]="src" [kind]="singleFileKind()" [name]="m.name ?? ''" />
+            }
+          </div>
+        </div>
+      } @else {
+        <!-- Link chia sẻ thư mục: duyệt cây read-only -->
+        <div class="ps-card">
+          <nav class="ps-crumbs">
+            @for (node of path(); track node.id; let i = $index) {
+              @if (i > 0) {
+                <span class="ps-crumb-sep">›</span>
+              }
+              <button class="ps-crumb" [disabled]="i === path().length - 1" (click)="goUp(i)">
+                {{ node.name }}
+              </button>
+            }
+          </nav>
+
+          @if (loading()) {
+            <p class="ps-state"><span class="spinner"></span> Đang tải…</p>
+          } @else if (rows().length === 0) {
+            <p class="ps-state">Thư mục này trống.</p>
+          } @else {
+            <ul class="ps-list">
+              @for (row of rows(); track row.kind + row.id) {
+                <li class="ps-item" (click)="openRow(row)">
+                  <span class="mi">
+                    {{ row.kind === 'folder' ? 'folder' : iconForExtension(row.extension ?? '') }}
+                  </span>
+                  <span class="ps-item-name">{{ row.name }}</span>
+                  <span class="ps-item-size">
+                    {{ row.size ? formatSize(+row.size) : '' }}
+                  </span>
+                  @if (row.kind === 'file' && m.allowDownload) {
+                    <button
+                      class="btn btn-ghost btn-sm"
+                      title="Tải xuống"
+                      (click)="download(row); $event.stopPropagation()"
+                    >
+                      <span class="mi sm">download</span>
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    }
+  </main>
+</div>
+
+<!-- Xem trước toàn màn hình (link thư mục) -->
+@if (previewRow(); as pr) {
+  <div class="preview-backdrop" (click)="closePreview()">
+    <div class="preview-shell" (click)="$event.stopPropagation()">
+      <header class="preview-head">
+        <span class="preview-name">{{ pr.name }}</span>
+        <div class="preview-actions">
+          @if (meta()?.allowDownload) {
+            <button class="btn btn-secondary btn-sm" (click)="download(pr)">
+              <span class="mi sm">download</span> Tải xuống
+            </button>
+          }
+          <button class="btn btn-ghost btn-sm" (click)="closePreview()">
+            <span class="mi sm">close</span>
+          </button>
+        </div>
+      </header>
+      <div class="preview-body">
+        <app-file-preview [source]="previewSource()!" [kind]="previewKind()" [name]="pr.name" />
+      </div>
+    </div>
+  </div>
+}

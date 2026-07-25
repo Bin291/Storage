@@ -61,6 +61,29 @@ create policy "realtime_own_files" on "File"
   for select to authenticated
   using ("userId" = auth.uid()::text);
 
+-- 4) Realtime cho bảng Notification (mục 12.J) — người nhận đang mở app sẽ
+--    thấy thông báo chia sẻ ngay, không cần reload. Cùng khuôn mẫu với bảng
+--    "File" ở bước 3 (DO block để chạy lại an toàn).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'Notification'
+  ) then
+    alter publication supabase_realtime add table "Notification";
+  end if;
+end $$;
+
+-- 4b) RLS cho Notification — BẮT BUỘC: thiếu policy này thì user nghe được
+--     thông báo của user khác qua Realtime. Prisma (service-role) vẫn bỏ qua
+--     RLS nên logic backend không đổi.
+grant select on "Notification" to authenticated;
+alter table "Notification" enable row level security;
+drop policy if exists "realtime_own_notifications" on "Notification";
+create policy "realtime_own_notifications" on "Notification"
+  for select to authenticated
+  using ("userId" = auth.uid()::text);
+
 -- Ghi chú: chưa tạo index ivfflat/hnsw cho pgvector ở giai đoạn MVP (mục 8.C).
 -- Thêm khi search bắt đầu chậm rõ rệt:
 --   create index on "DocumentChunk" using hnsw (embedding vector_cosine_ops);

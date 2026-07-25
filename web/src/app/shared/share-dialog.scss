@@ -1,0 +1,95 @@
+/* Dialog Chia sẻ (mục 12.F) */
+.sd-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-sm);
+}
+
+.sd-label {
+  font-size: var(--fs-body-sm);
+  font-weight: 600;
+}
+
+.sd-hint,
+.sd-stats {
+  margin: 0;
+  font-size: var(--fs-body-sm);
+  opacity: 0.7;
+}
+
+.sd-error {
+  margin: 0;
+  font-size: var(--fs-body-sm);
+  color: var(--c-danger, #e5484d);
+}
+
+.sd-invite-row,
+.sd-link-row {
+  display: flex;
+  gap: var(--s-sm);
+  align-items: center;
+}
+.sd-invite-row .input,
+.sd-link-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sd-people {
+  list-style: none;
+  margin: var(--s-xs) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sd-person {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  padding: 4px 0;
+  font-size: var(--fs-body-sm);
+}
+.sd-person-email {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sd-person-role {
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.sd-sep {
+  margin: var(--s-lg) 0;
+  border: 0;
+  border-top: 1px solid var(--c-border);
+}
+
+.sd-opts {
+  display: flex;
+  align-items: center;
+  gap: var(--s-md);
+  flex-wrap: wrap;
+}
+.sd-check,
+.sd-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-xs);
+  font-size: var(--fs-body-sm);
+}
+.sd-grow {
+  flex: 1;
+  min-width: 0;
+}
+.sd-grow .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.danger {
+  color: var(--c-danger, #e5484d);
+}

@@ -8,6 +8,13 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./pages/login/login').then((m) => m.Login),
   },
+  // Link chia sẻ công khai (mục 12.F) — NGOÀI Shell/authGuard: người nhận
+  // không có tài khoản vẫn phải mở được.
+  {
+    path: 's/:token',
+    loadComponent: () =>
+      import('./pages/public-share/public-share').then((m) => m.PublicShare),
+  },
   {
     path: '',
     component: Shell,
@@ -38,6 +45,12 @@ export const routes: Routes = [
         path: 'recent',
         loadComponent: () => import('./pages/files/files').then((m) => m.Files),
         data: { recent: true },
+      },
+      // "Được chia sẻ với tôi" — lăng kính thứ 3, tách bạch (mục 12.A).
+      {
+        path: 'shared',
+        loadComponent: () =>
+          import('./pages/shared/shared').then((m) => m.Shared),
       },
       // Thùng rác (mục 7.E/11.K).
       {

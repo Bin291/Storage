@@ -1,0 +1,51 @@
+/* Cắt ảnh đại diện (mục 11.L) */
+.ac-stage {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+  line-height: 0;
+  border-radius: var(--r-md, 8px);
+  overflow: hidden;
+}
+
+.ac-canvas {
+  display: block;
+  touch-action: none; /* để pointermove kéo được trên cảm ứng, không cuộn trang */
+  cursor: grab;
+}
+.ac-canvas:active {
+  cursor: grabbing;
+}
+
+/* Lỗ tròn: phần trong vòng tròn là vùng được giữ lại. */
+.ac-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.ac-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  margin-top: var(--s-md);
+}
+.ac-zoom {
+  flex: 1;
+  min-width: 0;
+}
+
+.ac-hint {
+  margin: var(--s-xs) 0 0;
+  text-align: center;
+  font-size: var(--fs-body-sm);
+  opacity: 0.65;
+}
+
+.ac-error {
+  margin: 0;
+  color: var(--c-danger, #e5484d);
+  font-size: var(--fs-body-sm);
+}

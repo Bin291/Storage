@@ -1,0 +1,107 @@
+<section class="page">
+  <header class="page-head">
+    <h2 class="page-title">
+      <span class="mi">group</span>
+      Được chia sẻ với tôi
+    </h2>
+
+    @if (browsing(); as b) {
+      <nav class="crumbs">
+        <button class="crumb" (click)="goUp(-1)">Được chia sẻ với tôi</button>
+        @for (node of b.path; track node.id; let i = $index) {
+          <span class="crumb-sep">›</span>
+          <button class="crumb" [disabled]="i === b.path.length - 1" (click)="goUp(i)">
+            {{ node.name }}
+          </button>
+        }
+      </nav>
+    }
+  </header>
+
+  @if (error()) {
+    <p class="state error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="state"><span class="spinner"></span> Đang tải…</p>
+  } @else if (isEmpty()) {
+    <div class="empty">
+      <span class="mi empty-ico">group</span>
+      <p>Chưa có ai chia sẻ gì với bạn.</p>
+      <p class="empty-sub">
+        Khi ai đó chia sẻ tệp hoặc thư mục qua email của bạn, chúng sẽ xuất hiện ở đây.
+      </p>
+    </div>
+  } @else {
+    <table class="table">
+      <thead>
+        <tr>
+          <th class="c-ico"></th>
+          <th>Tên</th>
+          <th class="c-owner">Người chia sẻ</th>
+          <th class="c-size">Dung lượng</th>
+          <th class="c-act"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.kind + row.id) {
+          <tr class="row" (dblclick)="openRow(row)">
+            <td class="c-ico">
+              @if (row.thumbnailUrl) {
+                <img class="thumb" [src]="row.thumbnailUrl" [alt]="row.name" loading="lazy" />
+              } @else {
+                <span class="mi">
+                  {{ row.kind === 'folder' ? 'folder' : iconForExtension(row.extension ?? '') }}
+                </span>
+              }
+            </td>
+            <td class="c-name">
+              <button class="name-btn" (click)="openRow(row)">{{ row.name }}</button>
+            </td>
+            <td class="c-owner">{{ row.ownerEmail ?? '—' }}</td>
+            <td class="c-size">{{ row.size ? formatSize(+row.size) : '—' }}</td>
+            <td class="c-act">
+              @if (row.kind === 'file' && row.allowDownload) {
+                <button class="btn btn-ghost btn-sm" title="Tải xuống" (click)="download(row)">
+                  <span class="mi sm">download</span>
+                </button>
+              } @else if (row.kind === 'file') {
+                <span class="mi sm readonly-ico" title="Chia sẻ này không cho phép tải xuống">
+                  visibility
+                </span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+<!-- Xem trước toàn màn hình -->
+@if (previewRow(); as pr) {
+  <div class="preview-backdrop" (click)="closePreview()">
+    <div class="preview-shell" (click)="$event.stopPropagation()">
+      <header class="preview-head">
+        <span class="preview-name">{{ pr.name }}</span>
+        <div class="preview-actions">
+          @if (pr.allowDownload) {
+            <button class="btn btn-secondary btn-sm" (click)="download(pr)">
+              <span class="mi sm">download</span> Tải xuống
+            </button>
+          }
+          <button class="btn btn-ghost btn-sm" (click)="closePreview()">
+            <span class="mi sm">close</span>
+          </button>
+        </div>
+      </header>
+      <div class="preview-body">
+        <app-file-preview
+          [source]="previewSource()!"
+          [kind]="previewKind()"
+          [name]="pr.name"
+        />
+      </div>
+    </div>
+  </div>
+}

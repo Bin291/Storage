@@ -43,6 +43,21 @@ export default () => ({
     // Số ngày giữ trong Thùng rác trước khi xoá vĩnh viễn (mục 7.E/11.K).
     retentionDays: parseInt(process.env.TRASH_RETENTION_DAYS ?? '30', 10),
   },
+
+  share: {
+    // Gốc URL để dựng link chia sẻ đầy đủ trả về dialog (mục 12.G).
+    baseUrl:
+      process.env.SHARE_BASE_URL ??
+      process.env.WEB_ORIGIN ??
+      'http://localhost:4200',
+    // Ký token phiên sau khi mở khoá mật khẩu link (mục 12.E).
+    sessionSecret: process.env.SHARE_SESSION_SECRET ?? '',
+    // TTL presigned cho link công khai — thu hồi có hiệu lực trong khoảng này (mục 12.B).
+    contentTtlSeconds: parseInt(
+      process.env.SHARE_CONTENT_TTL_SECONDS ?? '600',
+      10,
+    ),
+  },
 });
 
 export type AppConfig = ReturnType<typeof import('./configuration').default>;

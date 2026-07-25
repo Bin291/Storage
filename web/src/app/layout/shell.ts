@@ -1,9 +1,17 @@
-import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   NavigationEnd,
   RouterLink,
-  RouterLinkActive,
   RouterOutlet,
   Router,
 } from '@angular/router';
@@ -11,6 +19,8 @@ import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { RealtimeService } from '../core/realtime.service';
 import { NotificationService } from '../core/notification.service';
+import { InboxService } from '../core/inbox.service';
+import type { NotificationItem } from '../core/models';
 import { UploadService } from '../core/upload.service';
 import { StatsService } from '../core/stats.service';
 import { DropTargetService } from '../core/drop-target.service';
@@ -18,14 +28,13 @@ import { ToolbarService } from '../core/toolbar.service';
 import { ViewPrefsService } from '../core/view-prefs.service';
 import { FormsModule } from '@angular/forms';
 import { NavSidebar } from './nav-sidebar';
-import { Avatar } from '../shared/avatar';
 
 /** Trang KHÔNG nhận kéo-thả tải lên (mục 11.H) — không có ngữ cảnh "tệp" để tải vào. */
 const NO_DROP_PREFIXES = ['/settings', '/profile'];
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NavSidebar, Avatar, FormsModule],
+  imports: [RouterOutlet, RouterLink, NavSidebar, FormsModule],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -42,6 +51,8 @@ export class Shell implements OnInit, OnDestroy {
   readonly searchQuery = signal('');
   readonly toolbar = inject(ToolbarService);
   readonly prefs = inject(ViewPrefsService);
+  readonly inbox = inject(InboxService);
+  readonly inboxOpen = signal(false);
 
   readonly categories = [
     { value: '', label: 'Tất cả loại' },
@@ -91,9 +102,27 @@ export class Shell implements OnInit, OnDestroy {
     });
   }
 
+  /** Bấm ra ngoài thì đóng bảng thông báo (không cần overlay riêng). */
+  @HostListener('document:click')
+  closeInbox(): void {
+    if (this.inboxOpen()) this.inboxOpen.set(false);
+  }
+
+  toggleInbox(e: Event): void {
+    e.stopPropagation(); // nếu không sẽ bị chính HostListener ở trên đóng lại ngay
+    this.inboxOpen.update((v) => !v);
+  }
+
+  openNotification(n: NotificationItem): void {
+    this.inbox.markRead(n.id);
+    this.inboxOpen.set(false);
+    if (n.linkPath) void this.router.navigateByUrl(n.linkPath);
+  }
+
   ngOnInit(): void {
     this.realtime.start();
     this.notifications.init(); // xin quyền + báo khi file xử lý xong (mục 11.F)
+    this.inbox.init(); // chuông thông báo chia sẻ (mục 12.J)
     // File chuyển 'ready'/xoá qua Realtime -> làm mới số đếm (mục 11.H).
     this.realtime.fileChanged.subscribe(() => this.stats.refreshSoon());
   }

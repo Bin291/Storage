@@ -27,17 +27,18 @@ model Folder {
   parent   Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
   children Folder[] @relation("FolderTree")
   files    File[]
+  shares   Share[] // link/lời mời chia sẻ — mục 12.C
 
   @@index([userId, parentId])
   @@index([userId, deletedAt])
 }
 
 model File {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String // "DS_diem_danh.xlsx" — chỉ để hiển thị
   extension    String // "xlsx", "pdf", "zip", "png"
-  mimeType     String   @default("application/octet-stream")
-  r2Key        String   @unique // "{userId}/{id}" — ID cố định, KHÔNG chứa path (mục 5.A)
+  mimeType     String    @default("application/octet-stream")
+  r2Key        String    @unique // "{userId}/{id}" — ID cố định, KHÔNG chứa path (mục 5.A)
   thumbnailUrl String? // null nếu thumbnail chưa xử lý xong
   size         BigInt // bytes — BigInt vì Int 32-bit tràn ở trần 2GB (mục 5.D)
   userId       String // chủ sở hữu
@@ -51,6 +52,7 @@ model File {
 
   folder Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade)
   chunks DocumentChunk[]
+  shares Share[] // link/lời mời chia sẻ — mục 12.C
 
   @@index([userId, folderId])
   @@index([userId, isStarred])
@@ -58,7 +60,7 @@ model File {
 }
 
 model DocumentChunk {
-  id         String                       @id @default(uuid())
+  id         String                      @id @default(uuid())
   fileId     String
   content    String // đoạn text ~1000 ký tự/chunk (mục 4.B, 8.C)
   chunkIndex Int
@@ -67,4 +69,63 @@ model DocumentChunk {
   file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@index([fileId])
+}
+
+/// Cấp quyền ĐỌC vào 1 target — dùng chung cho CẢ 2 kênh chia sẻ (mục 12.A):
+///   kênh A (trực tiếp): sharedWithUserId có giá trị, token = null
+///   kênh B (link):      token có giá trị, sharedWithUserId = null
+model Share {
+  id       String  @id @default(uuid())
+  userId   String // CHỦ SỞ HỮU (người chia sẻ)
+  fileId   String? // ĐÚNG 1 trong 2 có giá trị (ràng buộc ở tầng app)
+  folderId String?
+
+  // --- Kênh B: link công khai ---
+  token        String? @unique // slug trong URL /s/{token}
+  passwordHash String? // null = không đặt mật khẩu (scrypt — mục 12.C)
+
+  // --- Kênh A: chia sẻ trực tiếp cho 1 user ---
+  sharedWithUserId String? // id user nhận (auth.users)
+  sharedWithEmail  String? // email lúc mời — chỉ để hiển thị lại
+
+  allowDownload Boolean   @default(true) // false = chỉ xem trực tuyến
+  expiresAt     DateTime? // null = không hết hạn
+  viewCount     Int       @default(0)
+  downloadCount Int       @default(0)
+  lastAccessAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  file          File?          @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  folder        Folder?        @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  notifications Notification[]
+
+  // Không mời trùng 1 người 2 lần cho cùng target. Postgres coi các NULL là
+  // KHÁC nhau nên nhiều link share (sharedWithUserId = null) vẫn cùng tồn tại.
+  @@unique([fileId, sharedWithUserId])
+  @@unique([folderId, sharedWithUserId])
+  @@index([userId])
+  @@index([sharedWithUserId])
+  @@index([fileId])
+  @@index([folderId])
+}
+
+/// Thông báo trong app (mục 12.J) — cần bảng thật vì Realtime-only sẽ mất
+/// thông báo khi người nhận đang offline (điểm yếu đã ghi ở mục 11.F).
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String // người NHẬN
+  type      String // 'share_received' | 'share_revoked' | ...
+  title     String
+  body      String?
+  linkPath  String? // VD '/shared' — bấm vào là điều hướng tới
+  shareId   String?
+  readAt    DateTime? // null = chưa đọc
+  createdAt DateTime  @default(now())
+
+  // SetNull (không Cascade): thu hồi chia sẻ vẫn giữ lịch sử thông báo.
+  share Share? @relation(fields: [shareId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
 }

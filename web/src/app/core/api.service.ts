@@ -1,7 +1,8 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { FileSource } from './file-source';
 import {
   BreadcrumbNode,
   FileItem,
@@ -9,7 +10,12 @@ import {
   FileStat,
   FolderItem,
   ListParams,
+  NotificationItem,
+  PublicShareMeta,
   SearchResultItem,
+  SharedBrowseResult,
+  SharedWithMeItem,
+  ShareView,
   TrashItem,
 } from './models';
 
@@ -306,6 +312,202 @@ export class ApiService {
       url?: string;
       error?: string;
     }>(`${this.base}/downloads/zip/${jobId}`);
+  }
+
+  // --- Chia sẻ: quản lý quyền, kênh A + B (mục 12.E nhóm A) ---
+  createShareLink(body: {
+    fileId?: string;
+    folderId?: string;
+    allowDownload?: boolean;
+    expiresInDays?: number;
+    password?: string;
+  }): Observable<ShareView> {
+    return this.http.post<ShareView>(`${this.base}/shares/link`, body);
+  }
+
+  inviteShare(body: {
+    fileId?: string;
+    folderId?: string;
+    email: string;
+    allowDownload?: boolean;
+    expiresInDays?: number;
+  }): Observable<ShareView> {
+    return this.http.post<ShareView>(`${this.base}/shares/invite`, body);
+  }
+
+  listShares(fileId?: string, folderId?: string): Observable<ShareView[]> {
+    let p = new HttpParams();
+    if (fileId) p = p.set('fileId', fileId);
+    if (folderId) p = p.set('folderId', folderId);
+    return this.http.get<ShareView[]>(`${this.base}/shares`, { params: p });
+  }
+
+  updateShare(
+    id: string,
+    body: {
+      allowDownload?: boolean;
+      expiresInDays?: number | null;
+      password?: string;
+    },
+  ): Observable<ShareView> {
+    return this.http.patch<ShareView>(`${this.base}/shares/${id}`, body);
+  }
+
+  revokeShare(id: string): Observable<{ status: string }> {
+    return this.http.delete<{ status: string }>(`${this.base}/shares/${id}`);
+  }
+
+  // --- Chia sẻ: phía người nhận, kênh A (mục 12.E nhóm C) ---
+  listSharedWithMe(): Observable<SharedWithMeItem[]> {
+    return this.http.get<SharedWithMeItem[]>(`${this.base}/shared`);
+  }
+
+  browseSharedFolder(
+    shareId: string,
+    folderId?: string,
+  ): Observable<SharedBrowseResult> {
+    let p = new HttpParams();
+    if (folderId) p = p.set('folderId', folderId);
+    return this.http.get<SharedBrowseResult>(
+      `${this.base}/shared/${shareId}/list`,
+      { params: p },
+    );
+  }
+
+  // --- Chia sẻ: link công khai, kênh B (mục 12.E nhóm B) ---
+  private shareHeaders(session?: string | null): HttpHeaders | undefined {
+    return session
+      ? new HttpHeaders({ 'X-Share-Session': session })
+      : undefined;
+  }
+
+  publicShareMeta(
+    token: string,
+    session?: string | null,
+  ): Observable<PublicShareMeta> {
+    return this.http.get<PublicShareMeta>(`${this.base}/s/${token}`, {
+      headers: this.shareHeaders(session),
+    });
+  }
+
+  unlockShare(token: string, password: string): Observable<{ session: string }> {
+    return this.http.post<{ session: string }>(`${this.base}/s/${token}/unlock`, {
+      password,
+    });
+  }
+
+  publicShareList(
+    token: string,
+    folderId?: string,
+    session?: string | null,
+  ): Observable<SharedBrowseResult> {
+    let p = new HttpParams();
+    if (folderId) p = p.set('folderId', folderId);
+    return this.http.get<SharedBrowseResult>(`${this.base}/s/${token}/list`, {
+      params: p,
+      headers: this.shareHeaders(session),
+    });
+  }
+
+  // --- Nguồn nội dung theo ngữ cảnh quyền (mục 12.F) ---
+
+  /** Chủ sở hữu — đường /downloads sẵn có. */
+  ownedSource(fileId: string): FileSource {
+    return {
+      blob: () => firstValueFrom(this.fileBlob(fileId)),
+      text: () => firstValueFrom(this.fileText(fileId)).then((r) => r.text),
+      contentUrl: () =>
+        firstValueFrom(this.fileDownloadUrl(fileId)).then((r) => r.url),
+      downloadUrl: () =>
+        firstValueFrom(this.fileDownloadAttachmentUrl(fileId)).then((r) => r.url),
+    };
+  }
+
+  /** Người được chia sẻ trực tiếp — kênh A. */
+  sharedSource(fileId: string): FileSource {
+    const base = `${this.base}/shared/file/${fileId}`;
+    return {
+      blob: () =>
+        firstValueFrom(this.http.get(`${base}/blob`, { responseType: 'blob' })),
+      text: () =>
+        firstValueFrom(this.http.get<{ text: string }>(`${base}/text`)).then(
+          (r) => r.text,
+        ),
+      contentUrl: () =>
+        firstValueFrom(this.http.get<{ url: string }>(`${base}/content`)).then(
+          (r) => r.url,
+        ),
+      downloadUrl: () =>
+        firstValueFrom(this.http.get<{ url: string }>(`${base}/download`)).then(
+          (r) => r.url,
+        ),
+    };
+  }
+
+  /** Link công khai — kênh B. `fileId` chỉ cần khi link chia sẻ cả thư mục. */
+  publicSource(
+    token: string,
+    fileId?: string,
+    session?: string | null,
+  ): FileSource {
+    const base = `${this.base}/s/${token}`;
+    const headers = this.shareHeaders(session);
+    let params = new HttpParams();
+    if (fileId) params = params.set('fileId', fileId);
+    return {
+      blob: () =>
+        firstValueFrom(
+          this.http.get(`${base}/blob`, {
+            params,
+            headers,
+            responseType: 'blob',
+          }),
+        ),
+      text: () =>
+        firstValueFrom(
+          this.http.get<{ text: string }>(`${base}/text`, { params, headers }),
+        ).then((r) => r.text),
+      contentUrl: () =>
+        firstValueFrom(
+          this.http.get<{ url: string }>(`${base}/content`, { params, headers }),
+        ).then((r) => r.url),
+      downloadUrl: () =>
+        firstValueFrom(
+          this.http.get<{ url: string }>(`${base}/download`, {
+            params,
+            headers,
+          }),
+        ).then((r) => r.url),
+    };
+  }
+
+  // --- Thông báo (mục 12.J) ---
+  listNotifications(unreadOnly = false): Observable<NotificationItem[]> {
+    let p = new HttpParams();
+    if (unreadOnly) p = p.set('unread', 'true');
+    return this.http.get<NotificationItem[]>(`${this.base}/notifications`, {
+      params: p,
+    });
+  }
+
+  unreadNotificationCount(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(
+      `${this.base}/notifications/unread-count`,
+    );
+  }
+
+  markNotificationRead(id: string): Observable<NotificationItem> {
+    return this.http.patch<NotificationItem>(
+      `${this.base}/notifications/${id}/read`,
+      {},
+    );
+  }
+
+  markAllNotificationsRead(): Observable<{ count: number }> {
+    return this.http.post<{ count: number }>(
+      `${this.base}/notifications/read-all`,
+      {},
+    );
   }
 
   // --- Avatar cá nhân hoá (mục 11.E) ---

@@ -49,11 +49,16 @@ export class AvatarService {
     this.hasAvatar.set(false);
   }
 
-  async upload(file: File): Promise<void> {
-    const blob = await this.compress(file);
+  /** Đường có cropper (mục 11.L): blob đã vuông 512px, không cần nén thêm. */
+  async uploadBlob(blob: Blob): Promise<void> {
     const { url } = await firstValueFrom(this.api.uploadAvatar(blob));
     this.url.set(url);
     this.hasAvatar.set(true);
+  }
+
+  /** Đường dự phòng (không qua cropper) — vẫn nén trước khi gửi. */
+  async upload(file: File): Promise<void> {
+    await this.uploadBlob(await this.compress(file));
   }
 
   async remove(): Promise<void> {

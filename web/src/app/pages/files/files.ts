@@ -36,6 +36,7 @@ import {
   previewKindForExtension,
 } from '../../core/preview-kind';
 import { Modal } from '../../shared/modal';
+import { ShareDialog } from '../../shared/share-dialog';
 import { SafeUrlPipe } from '../../shared/safe-url.pipe';
 import { ImageViewer } from '../../shared/preview/image-viewer';
 import { DocxViewer } from '../../shared/preview/docx-viewer';
@@ -66,6 +67,7 @@ type Lens = 'folder' | 'starred' | 'recent' | 'type';
     FormsModule,
     RouterLink,
     Modal,
+    ShareDialog,
     SafeUrlPipe,
     ImageViewer,
     DocxViewer,
@@ -861,6 +863,16 @@ export class Files {
   readonly previewKind = signal<PreviewKind>('other');
   readonly previewIndex = signal(-1);
 
+  /**
+   * Nguồn nội dung cho renderer xem trước (mục 12.F). `computed` chứ KHÔNG gọi
+   * hàm thẳng trong template — nếu không mỗi chu kỳ change-detection sẽ tạo ra
+   * một object mới, làm `effect()` trong renderer chạy lại vô hạn.
+   */
+  readonly previewSource = computed(() => {
+    const f = this.previewFile();
+    return f ? this.api.ownedSource(f.id) : null;
+  });
+
   /** Mọi file xem trước được trong danh sách đang hiển thị (không tính folder). */
   readonly previewList = computed<FileItem[]>(() =>
     this.files().filter(
@@ -1029,5 +1041,17 @@ export class Files {
     this.modal.set(null);
     this.selected.set(null);
     this.busy.set(false);
+  }
+
+  // --- Chia sẻ (mục 12.F) ---
+  readonly shareTarget = signal<Selected | null>(null);
+
+  openShare(kind: ItemKind, id: string, name: string): void {
+    this.closeMenu();
+    this.shareTarget.set({ kind, id, name });
+  }
+
+  closeShare(): void {
+    this.shareTarget.set(null);
   }
 }

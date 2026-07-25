@@ -123,3 +123,12 @@
     </a>
   </div>
 </section>
+
+<!-- Cắt ảnh đại diện (mục 11.L) — mở sau khi chọn tệp, trước khi tải lên -->
+@if (pendingAvatar(); as pa) {
+  <app-avatar-cropper
+    [file]="pa"
+    (cropped)="onCropped($event)"
+    (cancel)="cancelCrop()"
+  />
+}

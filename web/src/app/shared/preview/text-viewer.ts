@@ -1,5 +1,5 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
-import { ApiService } from '../../core/api.service';
+import { Component, effect, input, signal } from '@angular/core';
+import { FileSource } from '../../core/file-source';
 
 /**
  * Xem trước dạng văn bản (mục 11.I):
@@ -35,9 +35,8 @@ import { ApiService } from '../../core/api.service';
   styleUrl: './text-viewer.scss',
 })
 export class TextViewer {
-  private readonly api = inject(ApiService);
-
-  readonly fileId = input.required<string>();
+  /** Nguồn nội dung theo ngữ cảnh quyền (mục 12.F). */
+  readonly source = input.required<FileSource>();
   readonly mode = input.required<'raw' | 'extract'>();
 
   readonly loading = signal(true);
@@ -46,26 +45,18 @@ export class TextViewer {
 
   constructor() {
     effect(() => {
-      void this.load(this.fileId(), this.mode());
+      void this.load(this.source(), this.mode());
     });
   }
 
-  private async load(fileId: string, mode: 'raw' | 'extract'): Promise<void> {
+  private async load(source: FileSource, mode: 'raw' | 'extract'): Promise<void> {
     this.loading.set(true);
     this.notAvailable.set(false);
     this.text.set('');
     try {
-      if (mode === 'raw') {
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          this.api.fileBlob(fileId).subscribe({ next: resolve, error: reject });
-        });
-        this.text.set(await blob.text());
-      } else {
-        const res = await new Promise<{ text: string }>((resolve, reject) => {
-          this.api.fileText(fileId).subscribe({ next: resolve, error: reject });
-        });
-        this.text.set(res.text);
-      }
+      this.text.set(
+        mode === 'raw' ? await (await source.blob()).text() : await source.text(),
+      );
       this.loading.set(false);
     } catch {
       this.loading.set(false);

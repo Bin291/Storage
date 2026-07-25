@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import sharp from 'sharp';
-import * as mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import { parseBuffer } from 'music-metadata';
 import ffmpegPath from 'ffmpeg-static';
@@ -21,13 +20,13 @@ const CANVAS = { w: 400, h: 300 };
 
 /**
  * Sinh thumbnail (mục 7.C / 11.I): ảnh qua `sharp`, PDF (trang đầu) qua
- * `pdf-to-img`. DOCX/bảng tính KHÔNG có layout engine (cố tình tránh
- * LibreOffice/Puppeteer — nặng cho side project) -> tự vẽ 1 "thẻ xem trước"
- * SVG (đoạn văn đầu / vài ô đầu bảng tính) rồi rasterize bằng sharp — rẻ,
- * không phụ thuộc binary ngoài, đủ để nhận diện nhanh trên card. Âm thanh
- * (mp3/flac/m4a/...) lấy bìa nhạc nhúng sẵn trong tag qua `music-metadata`
- * (giống Explorer/Windows) — không tự vẽ thẻ giả nếu file không có bìa.
- * Video bắt khung hình đầu qua `ffmpeg-static` (binary tĩnh kèm theo gói).
+ * `pdf-to-img`. Bảng tính KHÔNG có layout engine -> tự vẽ 1 "thẻ xem trước"
+ * SVG (vài ô đầu) rồi rasterize bằng sharp. DOCX KHÔNG hỗ trợ preview thật
+ * (chỉ icon phía client — MVP, tránh LibreOffice/Puppeteer nặng cho side
+ * project). Âm thanh (mp3/flac/m4a/...) lấy bìa nhạc nhúng sẵn trong tag qua
+ * `music-metadata` (giống Explorer/Windows) — không tự vẽ thẻ giả nếu file
+ * không có bìa. Video bắt khung hình đầu qua `ffmpeg-static` (binary tĩnh
+ * kèm theo gói).
  */
 @Injectable()
 export class ThumbnailService {
@@ -38,7 +37,6 @@ export class ThumbnailService {
     return (
       IMAGE_EXTS.has(ext) ||
       ext === 'pdf' ||
-      ext === 'docx' ||
       SHEET_EXTS.has(ext) ||
       AUDIO_EXTS.has(ext) ||
       VIDEO_EXTS.has(ext)
@@ -49,7 +47,6 @@ export class ThumbnailService {
   async generate(buffer: Buffer, extension: string): Promise<Buffer | null> {
     const ext = extension.toLowerCase();
     try {
-      if (ext === 'docx') return await this.generateDocxThumb(buffer);
       if (SHEET_EXTS.has(ext)) return await this.generateSheetThumb(buffer);
       if (AUDIO_EXTS.has(ext)) return await this.generateAudioThumb(buffer);
       if (VIDEO_EXTS.has(ext)) return await this.generateVideoThumb(buffer, ext);
@@ -170,28 +167,6 @@ export class ThumbnailService {
     }
   }
 
-  /** "Thẻ xem trước" DOCX: đoạn văn đầu vẽ dạng dòng chữ trên nền trang giấy. */
-  private async generateDocxThumb(buffer: Buffer): Promise<Buffer | null> {
-    const { value } = await mammoth.extractRawText({ buffer });
-    const text = (value ?? '').trim();
-    if (!text) return null;
-    const lines = wrapText(text, 40).slice(0, 11);
-    const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS.w}" height="${CANVAS.h}" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}">
-  <rect width="${CANVAS.w}" height="${CANVAS.h}" fill="#f4f4f5"/>
-  <rect x="24" y="20" width="${CANVAS.w - 48}" height="${CANVAS.h - 40}" rx="4" fill="#ffffff" stroke="#e5e5e5"/>
-  <rect x="24" y="20" width="${CANVAS.w - 48}" height="6" fill="#6d5efc"/>
-  <text x="44" y="52" font-family="sans-serif" font-size="13" font-weight="700" fill="#171717">${escapeXml(firstLine(text, 28))}</text>
-  ${lines
-    .map(
-      (line, i) =>
-        `<text x="44" y="${76 + i * 18}" font-family="sans-serif" font-size="11" fill="#525252">${escapeXml(line)}</text>`,
-    )
-    .join('\n  ')}
-</svg>`.trim();
-    return sharp(Buffer.from(svg)).webp({ quality: 80 }).toBuffer();
-  }
-
   /** "Thẻ xem trước" bảng tính: vài dòng/cột đầu vẽ dạng lưới ô. */
   private async generateSheetThumb(buffer: Buffer): Promise<Buffer | null> {
     const wb = XLSX.read(buffer, { type: 'buffer' });
@@ -264,29 +239,6 @@ function escapeXml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function firstLine(text: string, maxChars: number): string {
-  const line = text.split(/\r?\n/)[0] ?? text;
-  return truncate(line, maxChars);
-}
-
 function truncate(s: string, maxChars: number): string {
   return s.length > maxChars ? `${s.slice(0, maxChars - 1)}…` : s;
-}
-
-/** Bọc dòng đơn giản theo số ký tự — đủ dùng cho thumbnail nhỏ, không cần đo font chính xác. */
-function wrapText(text: string, charsPerLine: number): string[] {
-  const words = text.replace(/\s+/g, ' ').trim().split(' ');
-  const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length > charsPerLine) {
-      if (current) lines.push(current);
-      current = word;
-    } else {
-      current = next;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
 }

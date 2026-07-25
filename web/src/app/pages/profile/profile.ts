@@ -6,13 +6,14 @@ import { ApiService } from '../../core/api.service';
 import { AvatarService } from '../../core/avatar.service';
 import { formatSize } from '../../core/file-utils';
 import { Avatar } from '../../shared/avatar';
+import { AvatarCropper } from '../../shared/avatar-cropper';
 
 const QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // Hạn mức hiển thị: 10 GB
 
 // Profile dùng thẳng Supabase Auth metadata — không có bảng User (mục 11.E).
 @Component({
   selector: 'app-profile',
-  imports: [FormsModule, RouterLink, Avatar],
+  imports: [FormsModule, RouterLink, Avatar, AvatarCropper],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -88,15 +89,33 @@ export class Profile {
     }
   }
 
-  async onPickAvatar(e: Event): Promise<void> {
+  /** Ảnh vừa chọn, đang chờ cắt (mục 11.L) — null = chưa mở cropper. */
+  readonly pendingAvatar = signal<File | null>(null);
+
+  /**
+   * Chọn ảnh xong KHÔNG upload ngay nữa — mở cropper để người dùng tự chọn
+   * khung (mục 11.L), tránh cảnh backend cắt vào giữa làm mất đầu ảnh dọc.
+   */
+  onPickAvatar(e: Event): void {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    this.avatarError.set(null);
+    this.pendingAvatar.set(file);
+  }
+
+  cancelCrop(): void {
+    this.pendingAvatar.set(null);
+  }
+
+  /** Nhận blob vuông 512px từ cropper rồi đẩy lên bằng luồng sẵn có. */
+  async onCropped(blob: Blob): Promise<void> {
+    this.pendingAvatar.set(null);
     this.avatarBusy.set(true);
     this.avatarError.set(null);
     try {
-      await this.avatar.upload(file);
+      await this.avatar.uploadBlob(blob);
     } catch {
       this.avatarError.set('Tải ảnh đại diện thất bại. Thử lại nhé.');
     } finally {

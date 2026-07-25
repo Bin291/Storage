@@ -1,6 +1,6 @@
-import { Component, ElementRef, effect, inject, input, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, effect, input, signal, viewChild } from '@angular/core';
 import { renderAsync } from 'docx-preview';
-import { ApiService } from '../../core/api.service';
+import { FileSource } from '../../core/file-source';
 
 /**
  * Xem trước DOCX ngay trong app (mục 11.I) — render client-side bằng
@@ -25,9 +25,8 @@ import { ApiService } from '../../core/api.service';
   styleUrl: './docx-viewer.scss',
 })
 export class DocxViewer {
-  private readonly api = inject(ApiService);
-
-  readonly fileId = input.required<string>();
+  /** Nguồn nội dung theo ngữ cảnh quyền (mục 12.F) — chủ sở hữu/được chia sẻ/link. */
+  readonly source = input.required<FileSource>();
 
   private readonly container = viewChild.required<ElementRef<HTMLDivElement>>('container');
 
@@ -37,19 +36,17 @@ export class DocxViewer {
   constructor() {
     // effect() lần đầu chạy sau khi view đã dựng xong -> viewChild có giá trị.
     effect(() => {
-      void this.load(this.fileId());
+      void this.load(this.source());
     });
   }
 
-  private async load(fileId: string): Promise<void> {
+  private async load(source: FileSource): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     const el = this.container().nativeElement;
     el.innerHTML = '';
     try {
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        this.api.fileBlob(fileId).subscribe({ next: resolve, error: reject });
-      });
+      const blob = await source.blob();
       await renderAsync(blob, el, el, {
         className: 'docx-render',
         inWrapper: true,

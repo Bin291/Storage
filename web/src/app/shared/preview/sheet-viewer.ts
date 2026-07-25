@@ -1,6 +1,6 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, input, signal } from '@angular/core';
 import * as XLSX from 'xlsx';
-import { ApiService } from '../../core/api.service';
+import { FileSource } from '../../core/file-source';
 
 const MAX_ROWS = 500;
 
@@ -71,9 +71,8 @@ const MAX_ROWS = 500;
   styleUrl: './sheet-viewer.scss',
 })
 export class SheetViewer {
-  private readonly api = inject(ApiService);
-
-  readonly fileId = input.required<string>();
+  /** Nguồn nội dung theo ngữ cảnh quyền (mục 12.F). */
+  readonly source = input.required<FileSource>();
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -87,7 +86,7 @@ export class SheetViewer {
 
   constructor() {
     effect(() => {
-      void this.load(this.fileId());
+      void this.load(this.source());
     });
   }
 
@@ -97,14 +96,12 @@ export class SheetViewer {
     this.renderSheet(name);
   }
 
-  private async load(fileId: string): Promise<void> {
+  private async load(source: FileSource): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     this.rows.set([]);
     try {
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        this.api.fileBlob(fileId).subscribe({ next: resolve, error: reject });
-      });
+      const blob = await source.blob();
       const buf = await blob.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array' });
       this.workbook = wb;

@@ -3,9 +3,9 @@
 export const environment = {
   production: false,
   apiBaseUrl: 'http://localhost:3000/api',
-  supabaseUrl: 'https://zniettadfyvqglzlrwew.supabase.co',
+  supabaseUrl: 'https://wvwrrkymwyvgsvbuzmep.supabase.co',
   supabaseAnonKey:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuaWV0dGFkZnl2cWdsemxyd2V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxODkyMTMsImV4cCI6MjA5OTc2NTIxM30.ERixeb4jqTQxw8qnEY61w-a3AcOIY9OybN_Mctju50c',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2d3Jya3ltd3l2Z3N2YnV6bWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NTAxNzMsImV4cCI6MjEwMDUyNjE3M30.sDE5PmQ5bMFVuzqqQyccm2BY8yV7eS4zihAobGnw7N4',
   // Kích thước chunk upload (byte) — khớp UPLOAD_CHUNK_SIZE_MB backend (mục 5.A).
   uploadChunkSize: 8 * 1024 * 1024,
   // Số chunk đẩy song song (mục 5.A).

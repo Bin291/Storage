@@ -15,6 +15,8 @@ import { DownloadModule } from './download/download.module';
 import { AiModule } from './ai/ai.module';
 import { SearchModule } from './search/search.module';
 import { TrashModule } from './trash/trash.module';
+import { ShareModule } from './share/share.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -50,6 +52,8 @@ import { HealthController } from './health.controller';
     AiModule,
     SearchModule,
     TrashModule,
+    ShareModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })

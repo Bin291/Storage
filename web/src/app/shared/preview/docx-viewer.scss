@@ -9,7 +9,7 @@
   width: 100%;
   height: 100%;
   overflow: auto;
-  background: var(--c-surface-soft);
+  background: transparent;
 }
 
 .dv-state {
@@ -18,7 +18,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--s-sm);
-  color: var(--c-body);
+  color: #ffffff;
   min-height: 200px;
   margin: auto;
 }
@@ -48,6 +48,7 @@
  * được (không mang attribute scope-encapsulation).
  */
 :host ::ng-deep .docx-render-wrapper {
-  background: var(--c-surface-soft) !important;
-  padding: var(--s-xl) var(--s-lg) !important;
+  background: transparent !important;
+  padding: 40px var(--s-md) !important;
 }
+

@@ -475,6 +475,9 @@
       <button (click)="openMove('file', f.id, f.name)">
         <span class="mi sm">drive_file_move</span> Chuyển
       </button>
+      <button (click)="openShare('file', f.id, f.name)">
+        <span class="mi sm">share</span> Chia sẻ
+      </button>
       <button (click)="openProperties(f)">
         <span class="mi sm">info</span> Thuộc tính
       </button>
@@ -491,6 +494,9 @@
       </button>
       <button (click)="openMove('folder', fo.id, fo.name)">
         <span class="mi sm">drive_file_move</span> Chuyển
+      </button>
+      <button (click)="openShare('folder', fo.id, fo.name)">
+        <span class="mi sm">share</span> Chia sẻ
       </button>
       <button class="danger" (click)="openDelete('folder', fo.id, fo.name)">
         <span class="mi sm">delete</span> Xoá
@@ -560,14 +566,24 @@
           [poster]="pf.thumbnailUrl"
         />
       } @else if (previewKind() === 'docx') {
-        <app-docx-viewer [fileId]="pf.id" />
+        <app-docx-viewer [source]="previewSource()!" />
       } @else if (previewKind() === 'sheet') {
-        <app-sheet-viewer [fileId]="pf.id" />
+        <app-sheet-viewer [source]="previewSource()!" />
       } @else if (previewKind() === 'text-raw') {
-        <app-text-viewer [fileId]="pf.id" [mode]="'raw'" />
+        <app-text-viewer [source]="previewSource()!" [mode]="'raw'" />
       } @else if (previewKind() === 'text-extract') {
-        <app-text-viewer [fileId]="pf.id" [mode]="'extract'" />
+        <app-text-viewer [source]="previewSource()!" [mode]="'extract'" />
       }
     </div>
   </div>
+}
+
+<!-- Dialog Chia sẻ (mục 12.F) -->
+@if (shareTarget(); as st) {
+  <app-share-dialog
+    [kind]="st.kind"
+    [targetId]="st.id"
+    [name]="st.name"
+    (close)="closeShare()"
+  />
 }
