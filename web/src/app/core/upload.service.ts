@@ -25,7 +25,7 @@ interface PendingSession {
 
 /**
  * Chunked multipart upload resumable (mục 5.A) + nén ảnh client-side (mục 4.A).
- * Chunk đi THẲNG lên R2 qua presigned URL (fetch), không qua backend.
+ * Chunk đi QUA backend (POST /uploads/part) — không phụ thuộc CORS bucket.
  */
 @Injectable({ providedIn: 'root' })
 export class UploadService {

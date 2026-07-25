@@ -21,7 +21,7 @@ import {
 } from './dto';
 
 // Nhóm "upload session": 30 request/phút/user (mục 5.D).
-// Data chunk đi THẲNG lên R2 nên mỗi file chỉ tốn vài request tới backend.
+// Data chunk đi THẲNG lên GCS nên mỗi file chỉ tốn vài request tới backend.
 @Controller('uploads')
 @UseGuards(JwtAuthGuard, UserThrottlerGuard)
 @Throttle({ default: { limit: 30, ttl: 60_000 } })
@@ -48,7 +48,7 @@ export class UploadController {
     return this.upload.partUrls(userId, fileId, dto.uploadId, dto.partNumbers);
   }
 
-  // Nhận bytes 1 part (application/octet-stream) rồi đẩy lên R2 — tránh CORS R2.
+  // Nhận bytes 1 part (application/octet-stream) rồi đẩy lên GCS — tránh CORS GCS.
   // Nới throttle vì file lớn có nhiều part (mỗi part = 1 request tới backend).
   @Post(':fileId/part')
   @Throttle({ default: { limit: 600, ttl: 60_000 } })

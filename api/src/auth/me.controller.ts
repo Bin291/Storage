@@ -6,12 +6,12 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { UserThrottlerGuard } from '../common/user-throttler.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthUser } from './jwt.strategy';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 
 @Controller('me')
 @UseGuards(JwtAuthGuard, UserThrottlerGuard)
 export class MeController {
-  constructor(private readonly r2: R2Service) {}
+  constructor(private readonly storage: StorageService) {}
 
   @Get()
   me(@CurrentUser() user: AuthUser): AuthUser {
@@ -20,18 +20,18 @@ export class MeController {
 
   /**
    * URL tải avatar hiện tại (cá nhân hoá — mục 11.E). Luôn presign mới (không
-   * cache): key R2 cố định theo userId nên KHÔNG cần cờ "hasAvatar" trong DB —
+   * cache): key GCS cố định theo userId nên KHÔNG cần cờ "hasAvatar" trong DB —
    * ảnh chưa từng tải lên thì presigned URL trỏ tới object không tồn tại, phía
    * Angular tự fallback về chữ cái đầu khi <img> báo lỗi tải.
    */
   @Get('avatar-url')
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   async avatarUrl(@CurrentUser('id') userId: string): Promise<{ url: string }> {
-    const url = await this.r2.presignDownload(this.r2.avatarKey(userId));
+    const url = await this.storage.presignDownload(this.storage.avatarKey(userId));
     return { url };
   }
 
-  /** Tải avatar mới: resize vuông 256x256 qua sharp rồi ghi đè object R2 của user. */
+  /** Tải avatar mới: resize vuông 256x256 qua sharp rồi ghi đè object GCS của user. */
   @Post('avatar')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async uploadAvatar(
@@ -43,16 +43,16 @@ export class MeController {
       .resize(256, 256, { fit: 'cover' })
       .webp({ quality: 82 })
       .toBuffer();
-    const key = this.r2.avatarKey(userId);
-    await this.r2.putObject(key, buffer, 'image/webp');
-    const url = await this.r2.presignDownload(key);
+    const key = this.storage.avatarKey(userId);
+    await this.storage.putObject(key, buffer, 'image/webp');
+    const url = await this.storage.presignDownload(key);
     return { url };
   }
 
   @Delete('avatar')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async deleteAvatar(@CurrentUser('id') userId: string): Promise<{ status: string }> {
-    await this.r2.deleteObject(this.r2.avatarKey(userId));
+    await this.storage.deleteObject(this.storage.avatarKey(userId));
     return { status: 'deleted' };
   }
 }

@@ -3,14 +3,14 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { AiPipelineJob, QUEUE } from '../jobs/queue.constants';
 import { DocumentParserService } from './document-parser.service';
 import { AiEmbeddingService } from './ai-embedding.service';
 import { chunkText } from './chunk.util';
 
 /**
- * Pipeline AI (mục 5.B/8.C): tải file R2 → trích text → lưu AI artifact →
+ * Pipeline AI (mục 5.B/8.C): tải file GCS → trích text → lưu AI artifact →
  * chunk → embed → lưu DocumentChunk (vector) → set File.status='ready'.
  * Concurrency 2 để không bùng nổ lệnh gọi Gemini (mục 5.B).
  */
@@ -21,7 +21,7 @@ export class AiPipelineProcessor extends WorkerHost {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     private readonly parser: DocumentParserService,
     private readonly embedder: AiEmbeddingService,
   ) {
@@ -36,7 +36,7 @@ export class AiPipelineProcessor extends WorkerHost {
     if (!file || file.status === 'delete_pending') return;
 
     // 1) Tải file gốc + trích text.
-    const buffer = await this.r2.getObjectBuffer(file.r2Key);
+    const buffer = await this.storage.getObjectBuffer(file.r2Key);
     const text = await this.parser.extractText(
       buffer,
       file.extension,
@@ -52,9 +52,9 @@ export class AiPipelineProcessor extends WorkerHost {
       return;
     }
 
-    // 3) Lưu AI artifact (raw text nhẹ) lên R2 để re-embed sau này (mục 4.B).
-    await this.r2.putObject(
-      this.r2.artifactKey(userId, fileId),
+    // 3) Lưu AI artifact (raw text nhẹ) lên GCS để re-embed sau này (mục 4.B).
+    await this.storage.putObject(
+      this.storage.artifactKey(userId, fileId),
       Buffer.from(text, 'utf-8'),
       'text/plain; charset=utf-8',
     );

@@ -329,3 +329,111 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Upload progress panel */
+.upload-panel {
+  position: fixed;
+  bottom: var(--s-xl);
+  right: var(--s-xl);
+  width: 320px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  z-index: 500; /* Tăng z-index để đè lên các thành phần khác */
+  background: var(--c-surface-card);
+}
+.up-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--s-md) var(--s-lg);
+  border-bottom: 1px solid var(--c-hairline);
+  font-size: var(--fs-body-sm);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.up-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-body);
+  font-size: var(--fs-caption);
+}
+.up-clear:hover {
+  color: var(--c-ink);
+}
+.up-list {
+  overflow-y: auto;
+  padding: var(--s-sm) var(--s-lg) var(--s-md);
+}
+.up-item {
+  padding: var(--s-sm) 0;
+}
+.up-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-sm);
+  font-size: var(--fs-caption);
+  margin-bottom: 4px;
+}
+.up-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-charcoal);
+}
+.up-status {
+  flex-shrink: 0;
+  color: var(--c-body);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.up-status.err {
+  color: var(--c-danger);
+}
+.up-status-text {
+  font-size: var(--fs-caption);
+  color: var(--c-body);
+}
+.up-locate-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-accent, #0071e3);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm, 4px);
+  transition: background-color 0.15s ease;
+  &:hover {
+    background: rgba(127, 127, 127, 0.08);
+    color: var(--c-accent-strong);
+  }
+}
+:root[data-theme="dark"] .up-locate-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.up-check-done {
+  color: var(--c-success, #22c55e);
+  font-weight: bold;
+}
+.up-bar {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--c-hairline);
+  overflow: hidden;
+}
+.up-fill {
+  height: 100%;
+  background: var(--c-ink);
+  transition: width 0.2s ease;
+}
+.up-err {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--c-danger);
+}
+

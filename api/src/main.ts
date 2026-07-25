@@ -20,7 +20,7 @@ async function bootstrap(): Promise<void> {
     origin: config.get<string>('webOrigin'),
     credentials: true,
   });
-  // Chunk upload đi QUA backend (proxy) để tránh phụ thuộc CORS của R2 (mục 5.A).
+  // Chunk upload đi QUA backend (proxy) để tránh phụ thuộc CORS của GCS (mục 5.A).
   // Nhận body nhị phân application/octet-stream cho route /api/uploads/**.
   // Chỉ khớp octet-stream nên body JSON (init/complete) vẫn qua parser mặc định.
   const chunkMb = config.get<number>('limits.uploadChunkSizeMb', 8);

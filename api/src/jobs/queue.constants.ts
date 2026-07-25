@@ -1,6 +1,6 @@
 /** Tên các hàng đợi BullMQ dùng chung toàn app (mục 5.B/5.E/7.A/7.E). */
 export const QUEUE = {
-  CLEANUP: 'cleanup', // dọn R2 rồi xoá DB (mục 7.E)
+  CLEANUP: 'cleanup', // dọn GCS rồi xoá DB (mục 7.E)
   AI_PIPELINE: 'ai-pipeline', // trích text + embedding (mục 5.B, 8)
   THUMBNAIL: 'thumbnail', // sinh thumbnail (mục 7.A/7.C)
   ZIP: 'zip', // nén folder để download (mục 5.E)
@@ -11,7 +11,7 @@ export interface CleanupJob {
   type: 'file' | 'folder';
   userId: string;
   targetId: string; // fileId hoặc folderId (root cần hard-delete)
-  r2Keys: string[]; // mọi object R2 cần xoá trước khi xoá DB
+  r2Keys: string[]; // mọi object GCS cần xoá trước khi xoá DB
 }
 
 export interface AiPipelineJob {

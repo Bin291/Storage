@@ -6,8 +6,8 @@ import { AuthService } from './auth.service';
 
 /**
  * Avatar cá nhân hoá (mục 11.E) — để nhận biết người dùng khi chia sẻ màn
- * hình. Không có bảng DB riêng: ảnh lưu ở R2 dưới key cố định theo userId
- * (`R2Service.avatarKey`), backend luôn presign URL mới khi hỏi. "Có avatar
+ * hình. Không có bảng DB riêng: ảnh lưu ở GCS dưới key cố định theo userId
+ * (`StorageService.avatarKey`), backend luôn presign URL mới khi hỏi. "Có avatar
  * hay chưa" suy từ việc <img> tải URL đó lỗi hay không — KHÔNG cần cờ boolean
  * lưu ở đâu cả (đúng triết lý "không phát sinh trạng thái thừa" của dự án).
  */

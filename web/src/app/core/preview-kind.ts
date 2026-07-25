@@ -3,7 +3,7 @@ import { isPreviewableImage } from './file-utils';
 
 /**
  * Loại renderer xem trước theo đuôi file (mục 11.I — hoàn thiện MVP phụ).
- * - image/pdf/audio/video: phát trực tiếp qua URL R2 (Range Requests sẵn có).
+ * - image/pdf/audio/video: phát trực tiếp qua URL GCS (Range Requests sẵn có).
  * - docx: render qua thư viện `docx-preview` (client-side, cần bytes gốc).
  * - sheet: xlsx/xls/csv/ods render qua SheetJS thành bảng HTML.
  * - text-raw: txt/md — tệp đã là văn bản, đọc thẳng bytes gốc.

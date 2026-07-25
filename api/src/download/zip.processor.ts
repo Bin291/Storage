@@ -17,7 +17,7 @@ const createArchive = require('archiver') as (
   options?: { zlib?: { level?: number } },
 ) => ArchiverInstance;
 import { PrismaService } from '../prisma/prisma.service';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { CacheService } from '../cache/cache.service';
 import { resolveNameConflict } from '../common/name-conflict';
 import { QUEUE, ZipJob } from '../jobs/queue.constants';
@@ -25,7 +25,7 @@ import { ZipStatus } from './download.service';
 
 /**
  * Nén file/folder đã chọn thành .zip streaming (mục 5.E/11.J) — không load
- * hết vào RAM. Kết quả lưu R2 (key tạm) + presigned URL, báo trạng thái qua
+ * hết vào RAM. Kết quả lưu GCS (key tạm) + presigned URL, báo trạng thái qua
  * Redis để client poll. Hỗ trợ chọn hỗn hợp nhiều file rời rạc + nhiều folder
  * cùng lúc (mục 11.J — bulk download kiểu Drive), tải 1 folder đơn chỉ là
  * trường hợp `folderIds` có đúng 1 phần tử.
@@ -36,7 +36,7 @@ export class ZipProcessor extends WorkerHost {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     private readonly cache: CacheService,
   ) {
     super();
@@ -52,7 +52,7 @@ export class ZipProcessor extends WorkerHost {
       archive.pipe(pass);
 
       const zipKey = `${userId}/_zips/${jobId}.zip`;
-      const uploadPromise = this.r2.uploadStream(zipKey, pass, 'application/zip');
+      const uploadPromise = this.storage.uploadStream(zipKey, pass, 'application/zip');
       archive.on('warning', (err) => this.logger.warn(err.message));
 
       // Tên ở GỐC zip (thư mục con của mỗi folder + tên từng file rời rạc)
@@ -71,7 +71,7 @@ export class ZipProcessor extends WorkerHost {
         for (const f of files) {
           const name = resolveNameConflict(f.name, rootNames);
           rootNames.push(name);
-          const stream = await this.r2.getObjectStream(f.r2Key);
+          const stream = await this.storage.getObjectStream(f.r2Key);
           archive.append(stream, { name });
           fileCount++;
         }
@@ -80,7 +80,7 @@ export class ZipProcessor extends WorkerHost {
       await archive.finalize();
       await uploadPromise;
 
-      const url = await this.r2.presignDownload(
+      const url = await this.storage.presignDownload(
         zipKey,
         3600,
         `download-${new Date().toISOString().slice(0, 10)}.zip`,
@@ -148,7 +148,7 @@ export class ZipProcessor extends WorkerHost {
     });
     for (const f of files) {
       const rel = pathById.get(f.folderId ?? folderId) ?? rootName;
-      const stream = await this.r2.getObjectStream(f.r2Key);
+      const stream = await this.storage.getObjectStream(f.r2Key);
       archive.append(stream, { name: `${rel}/${f.name}` });
     }
     return files.length;

@@ -12,7 +12,7 @@ import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserThrottlerGuard } from '../common/user-throttler.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { ShareService } from './share.service';
 import { PublicListQuery } from './dto';
 
@@ -29,7 +29,7 @@ import { PublicListQuery } from './dto';
 export class SharedWithMeController {
   constructor(
     private readonly shares: ShareService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
   ) {}
 
   /** View "Được chia sẻ với tôi". */
@@ -58,7 +58,7 @@ export class SharedWithMeController {
       userId,
       fileId,
     );
-    const url = await this.r2.presignDownload(
+    const url = await this.storage.presignDownload(
       file.r2Key,
       this.shares.contentTtl(),
     );
@@ -77,7 +77,7 @@ export class SharedWithMeController {
       fileId,
     );
     this.shares.assertDownloadAllowed(share);
-    const url = await this.r2.presignDownload(
+    const url = await this.storage.presignDownload(
       file.r2Key,
       this.shares.contentTtl(),
       file.name,
@@ -95,7 +95,7 @@ export class SharedWithMeController {
     @Res() res: Response,
   ): Promise<void> {
     const { file } = await this.shares.assertGrantedAccess(userId, fileId);
-    const stream = await this.r2.getObjectStream(file.r2Key);
+    const stream = await this.storage.getObjectStream(file.r2Key);
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
     res.setHeader(
       'Content-Disposition',
@@ -113,8 +113,8 @@ export class SharedWithMeController {
   ): Promise<{ text: string }> {
     const { file } = await this.shares.assertGrantedAccess(userId, fileId);
     try {
-      const buf = await this.r2.getObjectBuffer(
-        this.r2.artifactKey(file.userId, file.id),
+      const buf = await this.storage.getObjectBuffer(
+        this.storage.artifactKey(file.userId, file.id),
       );
       return { text: buf.toString('utf-8') };
     } catch {

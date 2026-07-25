@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import type { Readable } from 'node:stream';
 import { PrismaService } from '../prisma/prisma.service';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { CacheService } from '../cache/cache.service';
 import { QUEUE, ZipJob } from '../jobs/queue.constants';
 
@@ -17,7 +17,7 @@ export interface ZipStatus {
 export class DownloadService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     private readonly cache: CacheService,
     @InjectQueue(QUEUE.ZIP) private readonly zipQueue: Queue<ZipJob>,
   ) {}
@@ -36,8 +36,8 @@ export class DownloadService {
     const cached = await this.cache.get<{ url: string }>(cacheKey);
     if (cached) return cached;
 
-    const publicUrl = this.r2.publicUrl(file.r2Key);
-    const url = publicUrl ?? (await this.r2.presignDownload(file.r2Key, 3600));
+    const publicUrl = this.storage.publicUrl(file.r2Key);
+    const url = publicUrl ?? (await this.storage.presignDownload(file.r2Key, 3600));
     const result = { url };
     // TTL ngắn hơn thời hạn presign để không trả URL sắp hết hạn.
     await this.cache.set(cacheKey, result, publicUrl ? 300 : 1800);
@@ -56,14 +56,14 @@ export class DownloadService {
       where: { id: fileId, userId, status: { not: 'delete_pending' } },
     });
     if (!file) throw new NotFoundException('Không tìm thấy tệp');
-    const url = await this.r2.presignDownload(file.r2Key, 3600, file.name, 'attachment');
+    const url = await this.storage.presignDownload(file.r2Key, 3600, file.name, 'attachment');
     return { url };
   }
 
   /**
    * Bytes gốc của file, QUA backend (mục 11.I — xem trước DOCX/XLSX).
    * Thư viện render phía client (docx-preview/xlsx) cần `fetch()` đọc được
-   * response, phụ thuộc CORS trực tiếp R2 — thay vì cấu hình CORS R2 (rủi ro,
+   * response, phụ thuộc CORS trực tiếp GCS — thay vì cấu hình CORS GCS (rủi ro,
    * xem ghi chú upload mục 5.A), proxy qua chính backend NestJS đã bật CORS
    * đúng origin sẵn (mục 3), giống hệt triết lý proxy upload.
    */
@@ -75,7 +75,7 @@ export class DownloadService {
       where: { id: fileId, userId, status: { not: 'delete_pending' } },
     });
     if (!file) throw new NotFoundException('Không tìm thấy tệp');
-    const stream = await this.r2.getObjectStream(file.r2Key);
+    const stream = await this.storage.getObjectStream(file.r2Key);
     return { stream, mimeType: file.mimeType, name: file.name };
   }
 
@@ -89,7 +89,7 @@ export class DownloadService {
     });
     if (!file) throw new NotFoundException('Không tìm thấy tệp');
     try {
-      const buf = await this.r2.getObjectBuffer(this.r2.artifactKey(userId, fileId));
+      const buf = await this.storage.getObjectBuffer(this.storage.artifactKey(userId, fileId));
       return { text: buf.toString('utf-8') };
     } catch {
       throw new NotFoundException('Chưa có bản trích xuất văn bản cho tệp này');

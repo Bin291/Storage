@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 
 /**
  * Gắn Authorization: Bearer <supabase jwt> cho mọi request tới API NestJS.
- * Không gắn cho request đi thẳng lên R2 (presigned URL đã tự chứa chữ ký).
+ * Không gắn cho request đi thẳng lên GCS (presigned URL đã tự chứa chữ ký).
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);

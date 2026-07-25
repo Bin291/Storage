@@ -8,7 +8,7 @@ import { Queue } from 'bullmq';
 import { File, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { resolveNameConflict } from '../common/name-conflict';
 import { extensionsForCategory } from '../common/file-categories';
 import { CleanupJob, QUEUE } from '../jobs/queue.constants';
@@ -39,7 +39,7 @@ export class FilesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     @InjectQueue(QUEUE.CLEANUP) private readonly cleanupQueue: Queue<CleanupJob>,
   ) {}
 
@@ -306,7 +306,7 @@ export class FilesService {
 
   /**
    * Xoá mềm — vào Thùng rác (mục 7.E giai đoạn 1 / 11.K).
-   * Chỉ đổi `deletedAt`, KHÔNG đụng R2 — khôi phục được bất cứ lúc nào.
+   * Chỉ đổi `deletedAt`, KHÔNG đụng GCS — khôi phục được bất cứ lúc nào.
    */
   async trash(userId: string, fileId: string): Promise<File> {
     const file = await this.assertOwned(userId, fileId);
@@ -341,7 +341,7 @@ export class FilesService {
   /**
    * Xoá vĩnh viễn (mục 7.E giai đoạn 2) — chỉ hợp lệ khi file ĐÃ ở Thùng rác
    * (qua trash() trước, hoặc job quét hết hạn — mục 11.K). delete_pending →
-   * enqueue dọn R2 (gốc+thumb+artifact) → xoá DB.
+   * enqueue dọn GCS (gốc+thumb+artifact) → xoá DB.
    */
   async hardDelete(userId: string, fileId: string): Promise<void> {
     const file = await this.assertOwned(userId, fileId);
@@ -361,8 +361,8 @@ export class FilesService {
       targetId: fileId,
       r2Keys: [
         file.r2Key,
-        this.r2.thumbnailKey(userId, fileId),
-        this.r2.artifactKey(userId, fileId),
+        this.storage.thumbnailKey(userId, fileId),
+        this.storage.artifactKey(userId, fileId),
       ],
     });
   }

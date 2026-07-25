@@ -43,7 +43,7 @@ export class Shell implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly realtime = inject(RealtimeService);
   private readonly notifications = inject(NotificationService);
-  private readonly upload = inject(UploadService);
+  readonly upload = inject(UploadService);
   private readonly stats = inject(StatsService);
   private readonly dropTarget = inject(DropTargetService);
 
@@ -54,6 +54,14 @@ export class Shell implements OnInit, OnDestroy {
   readonly inbox = inject(InboxService);
   readonly inboxOpen = signal(false);
   readonly categoryMenuOpen = signal(false);
+
+  locateUpload(task: any): void {
+    if (task.folderId) {
+      void this.router.navigate(['/folder', task.folderId]);
+    } else {
+      void this.router.navigate(['/files']);
+    }
+  }
 
   readonly categories = [
     { value: '', label: 'Tất cả loại' },

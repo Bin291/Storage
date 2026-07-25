@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { ShareService } from './share.service';
 import { PublicListQuery, UnlockDto } from './dto';
 import { PublicThrottlerGuard } from './public-throttler.guard';
@@ -33,7 +33,7 @@ const SESSION_HEADER = 'x-share-session';
 export class PublicShareController {
   constructor(
     private readonly shares: ShareService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
   ) {}
 
   /**
@@ -86,7 +86,7 @@ export class PublicShareController {
     return this.shares.publicBrowse(resolved, q.folderId);
   }
 
-  /** URL xem trực tuyến — presigned TTL ngắn, KHÔNG bao giờ là URL r2.dev. */
+  /** URL xem trực tuyến — presigned TTL ngắn, KHÔNG bao giờ là URL public của bucket. */
   @Get(':token/content')
   async content(
     @Param('token') token: string,
@@ -98,7 +98,7 @@ export class PublicShareController {
       resolved,
       fileId ?? resolved.file?.id ?? '',
     );
-    const url = await this.r2.presignDownload(
+    const url = await this.storage.presignDownload(
       file.r2Key,
       this.shares.contentTtl(),
     );
@@ -118,7 +118,7 @@ export class PublicShareController {
       resolved,
       fileId ?? resolved.file?.id ?? '',
     );
-    const url = await this.r2.presignDownload(
+    const url = await this.storage.presignDownload(
       file.r2Key,
       this.shares.contentTtl(),
       file.name,
@@ -141,7 +141,7 @@ export class PublicShareController {
       resolved,
       fileId ?? resolved.file?.id ?? '',
     );
-    const stream = await this.r2.getObjectStream(file.r2Key);
+    const stream = await this.storage.getObjectStream(file.r2Key);
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
     res.setHeader(
       'Content-Disposition',
@@ -164,8 +164,8 @@ export class PublicShareController {
       fileId ?? resolved.file?.id ?? '',
     );
     try {
-      const buf = await this.r2.getObjectBuffer(
-        this.r2.artifactKey(file.userId, file.id),
+      const buf = await this.storage.getObjectBuffer(
+        this.storage.artifactKey(file.userId, file.id),
       );
       return { text: buf.toString('utf-8') };
     } catch {

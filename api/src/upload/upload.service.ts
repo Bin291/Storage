@@ -9,7 +9,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { File } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { R2Service, CompletedPart } from '../storage/r2.service';
+import { StorageService, CompletedPart } from '../storage/storage.service';
 import { FilesService } from '../files/files.service';
 import {
   AiPipelineJob,
@@ -33,7 +33,7 @@ export class UploadService {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     private readonly files: FilesService,
     @InjectQueue(QUEUE.AI_PIPELINE)
     private readonly aiQueue: Queue<AiPipelineJob>,
@@ -55,7 +55,7 @@ export class UploadService {
     return file;
   }
 
-  /** Mở phiên multipart trên R2 + tạo row File (mục 5.A). */
+  /** Mở phiên multipart trên GCS + tạo row File (mục 5.A). */
   async init(
     userId: string,
     dto: {
@@ -82,7 +82,7 @@ export class UploadService {
       folderId: dto.folderId,
     });
 
-    const uploadId = await this.r2.createMultipartUpload(
+    const uploadId = await this.storage.createMultipartUpload(
       file.r2Key,
       dto.mimeType,
     );
@@ -110,12 +110,12 @@ export class UploadService {
     return Promise.all(
       partNumbers.map(async (partNumber) => ({
         partNumber,
-        url: await this.r2.presignUploadPart(file.r2Key, uploadId, partNumber),
+        url: await this.storage.presignUploadPart(file.r2Key, uploadId, partNumber),
       })),
     );
   }
 
-  /** Upload 1 part QUA backend (proxy) — trình duyệt gửi bytes tới API, API đẩy lên R2. */
+  /** Upload 1 part QUA backend (proxy) — trình duyệt gửi bytes tới API, API đẩy lên GCS. */
   async uploadPart(
     userId: string,
     fileId: string,
@@ -127,7 +127,7 @@ export class UploadService {
       throw new BadRequestException('Part rỗng');
     }
     const file = await this.ownFile(userId, fileId);
-    const etag = await this.r2.uploadPart(
+    const etag = await this.storage.uploadPart(
       file.r2Key,
       uploadId,
       partNumber,
@@ -136,14 +136,14 @@ export class UploadService {
     return { etag };
   }
 
-  /** Resume: hỏi R2 các part đã nhận (mục 5.A — không cần bảng track riêng). */
+  /** Resume: hỏi GCS các part đã nhận (mục 5.A — không cần bảng track riêng). */
   async listParts(
     userId: string,
     fileId: string,
     uploadId: string,
   ): Promise<CompletedPart[]> {
     const file = await this.ownFile(userId, fileId);
-    return this.r2.listParts(file.r2Key, uploadId);
+    return this.storage.listParts(file.r2Key, uploadId);
   }
 
   /** Ghép chunk → chuyển file sang 'processing' để pipeline AI/thumbnail xử lý (mục 5.B/7.A). */
@@ -157,7 +157,7 @@ export class UploadService {
     if (file.status !== 'uploading') {
       throw new ForbiddenException('Phiên upload đã kết thúc');
     }
-    await this.r2.completeMultipartUpload(file.r2Key, uploadId, parts);
+    await this.storage.completeMultipartUpload(file.r2Key, uploadId, parts);
     // 'processing': worker (Mốc 5) sẽ trích text + embed + thumbnail rồi set 'ready'.
     const updated = await this.files.markStatus(userId, fileId, 'processing');
 
@@ -193,7 +193,7 @@ export class UploadService {
     uploadId: string,
   ): Promise<void> {
     const file = await this.ownFile(userId, fileId);
-    await this.r2.abortMultipartUpload(file.r2Key, uploadId);
+    await this.storage.abortMultipartUpload(file.r2Key, uploadId);
     // Xoá row uploading dở dang.
     await this.prisma.file.deleteMany({
       where: { id: fileId, userId, status: 'uploading' },

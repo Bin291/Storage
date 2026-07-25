@@ -8,7 +8,7 @@ import { Queue } from 'bullmq';
 import { Folder } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
-import { R2Service } from '../storage/r2.service';
+import { StorageService } from '../storage/storage.service';
 import { resolveNameConflict } from '../common/name-conflict';
 import { CleanupJob, QUEUE } from '../jobs/queue.constants';
 
@@ -22,7 +22,7 @@ export class FoldersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-    private readonly r2: R2Service,
+    private readonly storage: StorageService,
     @InjectQueue(QUEUE.CLEANUP) private readonly cleanupQueue: Queue<CleanupJob>,
   ) {}
 
@@ -248,7 +248,7 @@ export class FoldersService {
 
   /**
    * Xoá vĩnh viễn (mục 7.E giai đoạn 2) — chỉ hợp lệ khi folder ĐÃ ở Thùng
-   * rác. Đánh dấu delete_pending → gom mọi r2Key con → enqueue job dọn R2
+   * rác. Đánh dấu delete_pending → gom mọi r2Key con → enqueue job dọn GCS
    * trước rồi hard-delete DB (cascade).
    */
   async hardDelete(userId: string, folderId: string): Promise<void> {
@@ -274,8 +274,8 @@ export class FoldersService {
     const r2Keys: string[] = [];
     for (const f of files) {
       r2Keys.push(f.r2Key);
-      r2Keys.push(this.r2.thumbnailKey(userId, f.id));
-      r2Keys.push(this.r2.artifactKey(userId, f.id));
+      r2Keys.push(this.storage.thumbnailKey(userId, f.id));
+      r2Keys.push(this.storage.artifactKey(userId, f.id));
     }
     await this.prisma.file.updateMany({
       where: { id: { in: files.map((f) => f.id) } },

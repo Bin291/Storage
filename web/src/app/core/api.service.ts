@@ -182,7 +182,7 @@ export class ApiService {
     }>(`${this.base}/uploads/init`, body);
   }
 
-  /** Upload 1 part QUA backend (proxy) — gửi bytes, backend đẩy lên R2. Tránh CORS R2. */
+  /** Upload 1 part QUA backend (proxy) — gửi bytes, backend đẩy lên GCS. Tránh CORS bucket. */
   uploadPart(
     fileId: string,
     uploadId: string,

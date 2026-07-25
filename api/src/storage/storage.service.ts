@@ -19,29 +19,40 @@ export interface CompletedPart {
 }
 
 /**
- * Bọc mọi thao tác R2 (S3-compatible) — mục 5.A/5.C PLAN.md.
- * Key R2 = ID cố định "{userId}/{fileId}", không chứa path người đọc được.
+ * Bọc mọi thao tác Google Cloud Storage — mục 5.A/5.C PLAN.md.
+ *
+ * GCS được gọi qua **XML API tương thích S3** (Interoperability): cùng một
+ * AWS SDK v3, chỉ đổi endpoint sang `https://storage.googleapis.com` và dùng
+ * cặp **HMAC key** (Access key / Secret) của một service account. Nhờ vậy toàn
+ * bộ luồng multipart + presigned URL giữ nguyên như khi còn dùng R2.
+ *
+ * Key object = ID cố định "{userId}/{fileId}", không chứa path người đọc được.
  */
 @Injectable()
-export class R2Service {
-  private readonly logger = new Logger(R2Service.name);
+export class StorageService {
+  private readonly logger = new Logger(StorageService.name);
   private readonly client: S3Client;
   private readonly bucket: string;
   private readonly publicBaseUrl: string;
 
   constructor(private readonly config: ConfigService) {
-    this.bucket = this.config.get<string>('r2.bucket', 'storage-app');
-    this.publicBaseUrl = this.config.get<string>('r2.publicBaseUrl', '');
+    this.bucket = this.config.get<string>('gcs.bucket', 'storage-app');
+    this.publicBaseUrl = this.config.get<string>('gcs.publicBaseUrl', '');
     this.client = new S3Client({
-      region: 'auto',
-      endpoint: this.config.get<string>('r2.endpoint'),
+      // SigV4 của GCS lấy region theo location của bucket (VD multi-region 'asia').
+      region: this.config.get<string>('gcs.region', 'auto'),
+      endpoint: this.config.get<string>(
+        'gcs.endpoint',
+        'https://storage.googleapis.com',
+      ),
       credentials: {
-        accessKeyId: this.config.get<string>('r2.accessKeyId', ''),
-        secretAccessKey: this.config.get<string>('r2.secretAccessKey', ''),
+        accessKeyId: this.config.get<string>('gcs.accessKeyId', ''),
+        secretAccessKey: this.config.get<string>('gcs.secretAccessKey', ''),
       },
       // AWS SDK v3 (>=3.729) tự thêm checksum CRC32 vào presigned URL
-      // (x-amz-checksum-crc32=AAAAAA==) khiến R2 từ chối PUT từ trình duyệt.
-      // Chỉ tính checksum khi thực sự bắt buộc để URL presign sạch (mục 5.A).
+      // (x-amz-checksum-crc32=AAAAAA==) — GCS XML API không hiểu header này và
+      // sẽ từ chối PUT từ trình duyệt. Chỉ tính checksum khi thực sự bắt buộc
+      // để URL presign sạch (mục 5.A).
       requestChecksumCalculation: 'WHEN_REQUIRED',
       responseChecksumValidation: 'WHEN_REQUIRED',
     });
@@ -77,11 +88,11 @@ export class R2Service {
         ContentType: contentType,
       }),
     );
-    if (!res.UploadId) throw new Error('R2 không trả về UploadId');
+    if (!res.UploadId) throw new Error('GCS không trả về UploadId');
     return res.UploadId;
   }
 
-  /** Presigned URL để Angular PUT thẳng 1 part lên R2 (không qua backend). */
+  /** Presigned URL để Angular PUT thẳng 1 part lên GCS (không qua backend). */
   presignUploadPart(
     key: string,
     uploadId: string,
@@ -100,7 +111,7 @@ export class R2Service {
     );
   }
 
-  /** Upload 1 part QUA backend (proxy) — trả ETag. Tránh phụ thuộc CORS R2 (mục 5.A). */
+  /** Upload 1 part QUA backend (proxy) — trả ETag. Tránh phụ thuộc CORS bucket (mục 5.A). */
   async uploadPart(
     key: string,
     uploadId: string,
@@ -116,7 +127,7 @@ export class R2Service {
         Body: body,
       }),
     );
-    if (!res.ETag) throw new Error('R2 không trả ETag khi upload part');
+    if (!res.ETag) throw new Error('GCS không trả ETag khi upload part');
     return res.ETag;
   }
 
@@ -139,7 +150,7 @@ export class R2Service {
     );
   }
 
-  /** Hỏi R2 các part đã nhận để resume (mục 5.A — không cần bảng track riêng). */
+  /** Hỏi GCS các part đã nhận để resume (mục 5.A — không cần bảng track riêng). */
   async listParts(key: string, uploadId: string): Promise<CompletedPart[]> {
     const parts: CompletedPart[] = [];
     let partNumberMarker: string | undefined;
@@ -178,8 +189,8 @@ export class R2Service {
 
   /**
    * Presigned GET URL. Nếu có CDN public thì ưu tiên URL public (cache tốt hơn).
-   * `filename` (nếu truyền) ép R2 trả `Content-Disposition` đúng tên gốc — không
-   * thì trình duyệt suy tên tải xuống từ key R2 ("{userId}/{fileId}", không đuôi,
+   * `filename` (nếu truyền) ép GCS trả `Content-Disposition` đúng tên gốc — không
+   * thì trình duyệt suy tên tải xuống từ key ("{userId}/{fileId}", không đuôi,
    * không tên đọc được) vì thẻ `<a download>` HTML BỊ BỎ QUA với URL khác gốc
    * (mục 11.J — sửa lỗi tên file "bể chữ"/thiếu đuôi khi tải xuống).
    */
@@ -271,8 +282,8 @@ export class R2Service {
         new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
       );
     } catch (err) {
-      // R2 delete idempotent; log nhưng không chặn luồng dọn rác.
-      this.logger.warn(`Xoá R2 key ${key} lỗi: ${(err as Error).message}`);
+      // Delete idempotent; log nhưng không chặn luồng dọn rác.
+      this.logger.warn(`Xoá object ${key} lỗi: ${(err as Error).message}`);
     }
   }
 }

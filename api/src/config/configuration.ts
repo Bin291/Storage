@@ -1,6 +1,6 @@
 /**
  * Cấu hình tập trung, đọc từ biến môi trường (xem .env.example).
- * Truy cập qua ConfigService: configService.get('r2.bucket')...
+ * Truy cập qua ConfigService: configService.get('gcs.bucket')...
  */
 export default () => ({
   env: process.env.NODE_ENV ?? 'development',
@@ -19,19 +19,24 @@ export default () => ({
     password: process.env.REDIS_PASSWORD || undefined,
   },
 
-  r2: {
-    accountId: process.env.R2_ACCOUNT_ID ?? '',
-    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
-    bucket: process.env.R2_BUCKET ?? 'storage-app',
-    endpoint: process.env.R2_ENDPOINT ?? '',
-    publicBaseUrl: process.env.R2_PUBLIC_BASE_URL ?? '',
+  // Google Cloud Storage, gọi qua XML API tương thích S3 (Interoperability).
+  gcs: {
+    projectId: process.env.GCS_PROJECT_ID ?? '',
+    bucket: process.env.GCS_BUCKET ?? 'storage-app',
+    // Location của bucket dùng làm region khi ký SigV4 (VD multi-region 'asia').
+    region: process.env.GCS_REGION ?? 'auto',
+    endpoint: process.env.GCS_ENDPOINT ?? 'https://storage.googleapis.com',
+    // HMAC key của service account (Cloud Storage -> Settings -> Interoperability).
+    accessKeyId: process.env.GCS_ACCESS_KEY_ID ?? '',
+    secretAccessKey: process.env.GCS_SECRET_ACCESS_KEY ?? '',
+    // Chỉ đặt khi bucket cho phép truy cập công khai (mặc định để trống).
+    publicBaseUrl: process.env.GCS_PUBLIC_BASE_URL ?? '',
   },
 
   gemini: {
     apiKey: process.env.GEMINI_API_KEY ?? '',
     embedModel: process.env.GEMINI_EMBED_MODEL ?? 'gemini-embedding-001',
-    ocrModel: process.env.GEMINI_OCR_MODEL ?? 'gemini-2.5-flash',
+    ocrModel: process.env.GEMINI_OCR_MODEL ?? 'gemini-3.6-flash',
   },
 
   limits: {

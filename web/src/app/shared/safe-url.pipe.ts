@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 /**
  * Đánh dấu URL an toàn để nhúng vào <iframe> (preview PDF — mục 2.2).
- * URL là presigned R2 do chính backend cấp nên tin cậy được.
+ * URL là presigned GCS do chính backend cấp nên tin cậy được.
  */
 @Pipe({ name: 'safeUrl' })
 export class SafeUrlPipe implements PipeTransform {

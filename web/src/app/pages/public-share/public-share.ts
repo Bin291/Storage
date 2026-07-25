@@ -24,7 +24,7 @@ interface Row {
  *
  * Nằm NGOÀI `Shell`/`authGuard`: người nhận không có tài khoản vẫn phải vào
  * được. Mọi nội dung lấy qua backend bằng presigned TTL ngắn — trang này
- * KHÔNG bao giờ chạm tới URL public r2.dev (mục 12.B).
+ * KHÔNG bao giờ chạm tới URL public của bucket (mục 12.B).
  */
 @Component({
   selector: 'app-public-share',

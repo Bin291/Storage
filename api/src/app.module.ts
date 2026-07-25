@@ -4,7 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
-import { R2Module } from './storage/r2.module';
+import { StorageModule } from './storage/storage.module';
 import { CacheModule } from './cache/cache.module';
 import { AuthModule } from './auth/auth.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -41,7 +41,7 @@ import { HealthController } from './health.controller';
       }),
     }),
     PrismaModule,
-    R2Module,
+    StorageModule,
     CacheModule,
     AuthModule,
     JobsModule,

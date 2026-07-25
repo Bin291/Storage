@@ -386,56 +386,6 @@
   </app-modal>
 }
 
-<!-- Upload progress panel (mục 5.A / 9.5) -->
-@if (upload.tasks().length > 0) {
-  <div class="upload-panel card">
-    <div class="up-head">
-      <span>Tải lên ({{ upload.tasks().length }})</span>
-      <button class="up-clear" (click)="upload.clearDone()">Dọn</button>
-    </div>
-    <div class="up-list">
-      @for (t of upload.tasks(); track t.id) {
-        <div class="up-item">
-          <div class="up-row">
-            <span class="up-name" [title]="t.name">
-              @if (t.isFolder) {
-                <span class="mi sm" style="vertical-align: middle; margin-right: 4px;">folder</span>
-              }
-              {{ t.name }}
-            </span>
-            <span class="up-status" [class.err]="t.status === 'error'">
-              @switch (t.status) {
-                @case ('preparing') {
-                  <span class="spinner"></span>
-                  <span class="up-status-text">chuẩn bị</span>
-                }
-                @case ('uploading') {
-                  <span class="spinner"></span>
-                  <span class="up-status-text">{{ t.progress }}%</span>
-                }
-                @case ('processing') {
-                  <span class="spinner"></span>
-                  <span class="up-status-text">đang xử lý</span>
-                }
-                @case ('done') {
-                  <button class="up-locate-btn" (click)="locateUpload(t)" title="Đi đến thư mục chứa">
-                    <span class="mi sm">folder_open</span>
-                  </button>
-                  <span class="up-check-done">✓</span>
-                }
-                @case ('error') { lỗi }
-              }
-            </span>
-          </div>
-          <div class="up-bar">
-            <div class="up-fill" [style.width.%]="t.status === 'done' ? 100 : t.progress"></div>
-          </div>
-          @if (t.error) { <span class="up-err">{{ t.error }}</span> }
-        </div>
-      }
-    </div>
-  </div>
-}
 
 <!-- Panel tiến trình nén zip hàng loạt (mục 11.J) -->
 @if (zipTasks().length > 0) {
