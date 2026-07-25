@@ -1,8 +1,11 @@
-# Only track web and api, ignore everything else
+# Only track web, api, and these root files, ignore everything else
 /*
 !/.gitignore
 !/web
 !/api
+!/Makefile
+!/package.json
+!/package-lock.json
 
 # Dependencies
 node_modules/

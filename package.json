@@ -1,0 +1,18 @@
+{
+  "name": "storage-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Chạy cả api (NestJS) + web (Angular) từ apps/, không cần cd.",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm:api\" \"npm:web\"",
+    "api": "npm --prefix api install && npm --prefix api run dev",
+    "web": "npm --prefix web install && npm --prefix web start",
+    "build": "npm --prefix api run build && npm --prefix web run build",
+    "redis:up": "docker compose -f ../docker-compose.yml up -d",
+    "redis:down": "docker compose -f ../docker-compose.yml down",
+    "install:all": "npm install && npm --prefix api install && npm --prefix web install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
