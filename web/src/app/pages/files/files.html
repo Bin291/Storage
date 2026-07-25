@@ -397,13 +397,32 @@
       @for (t of upload.tasks(); track t.id) {
         <div class="up-item">
           <div class="up-row">
-            <span class="up-name" [title]="t.name">{{ t.name }}</span>
+            <span class="up-name" [title]="t.name">
+              @if (t.isFolder) {
+                <span class="mi sm" style="vertical-align: middle; margin-right: 4px;">folder</span>
+              }
+              {{ t.name }}
+            </span>
             <span class="up-status" [class.err]="t.status === 'error'">
               @switch (t.status) {
-                @case ('preparing') { chuẩn bị }
-                @case ('uploading') { {{ t.progress }}% }
-                @case ('processing') { đang xử lý }
-                @case ('done') { ✓ }
+                @case ('preparing') {
+                  <span class="spinner"></span>
+                  <span class="up-status-text">chuẩn bị</span>
+                }
+                @case ('uploading') {
+                  <span class="spinner"></span>
+                  <span class="up-status-text">{{ t.progress }}%</span>
+                }
+                @case ('processing') {
+                  <span class="spinner"></span>
+                  <span class="up-status-text">đang xử lý</span>
+                }
+                @case ('done') {
+                  <button class="up-locate-btn" (click)="locateUpload(t)" title="Đi đến thư mục chứa">
+                    <span class="mi sm">folder_open</span>
+                  </button>
+                  <span class="up-check-done">✓</span>
+                }
                 @case ('error') { lỗi }
               }
             </span>
