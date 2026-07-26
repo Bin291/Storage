@@ -16,10 +16,29 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
-  const webOriginSetting = config.get<string>('webOrigin') || '';
-  const origins = webOriginSetting.split(',').map(o => o.trim()).filter(Boolean);
+  // Danh sách origin được phép — WEB_ORIGIN có thể liệt kê nhiều origin ngăn cách
+  // bằng dấu phẩy (VD "https://storage.binhh.id.vn,http://localhost:4200"), nhờ vậy
+  // MỘT API đã deploy phục vụ được cả web prod lẫn web chạy local.
+  const allowedOrigins = config.get<string[]>('webOrigins', []);
+  // Localhost luôn được phép để dev không phải sửa env mỗi lần đổi cổng. CORS không
+  // phải hàng rào bảo mật của API này (mọi route đều cần JWT Supabase) — nó chỉ
+  // quyết định trình duyệt có cho JS đọc response hay không.
+  const isLocalhost = (origin: string): boolean =>
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
   app.enableCors({
-    origin: origins.length > 0 ? origins : '*',
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Không có Origin = request không phải từ trình duyệt (curl/Postman/server-to-server).
+      if (!origin || allowedOrigins.includes(origin) || isLocalhost(origin)) {
+        // Trả về true ⇒ cors echo lại đúng origin của request vào
+        // Access-Control-Allow-Origin (không phải 1 giá trị cố định).
+        callback(null, true);
+      } else {
+        const allowed = allowedOrigins.join(', ');
+        console.warn(`CORS chặn origin: ${origin} (cho phép: ${allowed})`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
   // Chunk upload đi QUA backend (proxy) để tránh phụ thuộc CORS của GCS (mục 5.A).

@@ -5,7 +5,20 @@
 export default () => ({
   env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
-  webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:4200',
+  // WEB_ORIGIN nhận NHIỀU origin, ngăn cách bằng dấu phẩy — cùng 1 API Cloud Run
+  // phục vụ cả web đã deploy lẫn web chạy local:
+  //   WEB_ORIGIN=https://storage.binhh.id.vn,http://localhost:4200
+  // Dấu "/" ở cuối được cắt bỏ vì trình duyệt gửi header Origin KHÔNG có dấu này
+  // ("http://localhost:4200/" sẽ không bao giờ khớp).
+  webOrigins: (process.env.WEB_ORIGIN ?? 'http://localhost:4200')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean),
+  // Origin đầu tiên = origin "chính" (dùng làm gốc URL chia sẻ nếu thiếu SHARE_BASE_URL).
+  webOrigin: (process.env.WEB_ORIGIN ?? 'http://localhost:4200')
+    .split(',')[0]
+    .trim()
+    .replace(/\/+$/, ''),
 
   supabase: {
     url: process.env.SUPABASE_URL ?? '',
