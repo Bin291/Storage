@@ -55,6 +55,16 @@ export class Shell implements OnInit, OnDestroy {
   readonly inboxOpen = signal(false);
   readonly categoryMenuOpen = signal(false);
 
+  readonly mobileSidebarOpen = signal(false);
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((v) => !v);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
   locateUpload(task: any): void {
     if (task.folderId) {
       void this.router.navigate(['/folder', task.folderId]);
@@ -119,6 +129,12 @@ export class Shell implements OnInit, OnDestroy {
         lastCompleted = n;
         this.stats.refreshSoon();
       }
+    });
+
+    effect(() => {
+      // Tự động đóng sidebar mobile khi đổi tuyến đường
+      this.url();
+      this.closeMobileSidebar();
     });
   }
 

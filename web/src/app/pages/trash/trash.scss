@@ -63,6 +63,26 @@ table.list thead th {
 .c-left {
   white-space: nowrap;
 }
+.c-meta-sub {
+  display: none;
+  font-size: var(--fs-caption);
+  color: var(--c-body);
+  margin-top: 2px;
+}
+@media (max-width: 640px) {
+  .c-date,
+  .c-left {
+    display: none !important;
+  }
+  .c-meta-sub {
+    display: block;
+  }
+}
+@media (max-width: 576px) {
+  .page {
+    padding: var(--s-lg) var(--s-md);
+  }
+}
 .soon {
   color: var(--c-danger);
   font-weight: 600;

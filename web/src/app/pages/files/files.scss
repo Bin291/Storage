@@ -63,6 +63,11 @@
   padding: var(--s-lg) var(--s-xl);
   border-bottom: 1px solid var(--c-hairline);
   flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    padding: var(--s-md) var(--s-lg);
+    gap: var(--s-md);
+  }
 }
 .crumbs {
   display: flex;
@@ -143,6 +148,15 @@
   display: flex;
   align-items: center;
   gap: var(--s-md);
+
+  @media (max-width: 600px) {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--s-xs);
+    padding: var(--s-xs) 0;
+  }
 }
 .selection-count {
   font-size: var(--fs-body-sm);
@@ -338,6 +352,22 @@
 .c-ico .folder-glyph {
   font-size: 22px;
   vertical-align: middle;
+}
+
+.c-meta-sub {
+  display: none;
+  font-size: var(--fs-caption);
+  color: var(--c-body);
+  margin-top: var(--s-xxs);
+}
+
+@media (max-width: 640px) {
+  .c-date, .c-size {
+    display: none !important;
+  }
+  .c-meta-sub {
+    display: block;
+  }
 }
 
 /* List — hàng phẳng, không viền khung quanh từng ô (mục 11.J, kiểu Drive) */

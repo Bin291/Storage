@@ -10,6 +10,44 @@
   gap: 2px;
 }
 
+.mobile-sidebar-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--s-md);
+  margin-bottom: var(--s-md);
+  border-bottom: 1px solid var(--c-hairline);
+  flex-shrink: 0;
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--s-sm);
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--c-ink);
+    
+    svg {
+      color: var(--c-accent);
+    }
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    
+    .mi {
+      font-size: 20px;
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .mobile-sidebar-header {
+    display: flex;
+  }
+}
+
 /* Nút "+ Mới" — kiểu Google Drive, đứng đầu sidebar (mục 11.H) */
 .new-wrap {
   position: relative;
@@ -196,7 +234,8 @@
 
 @media (max-width: 860px) {
   .nav-sidebar {
-    display: none;
+    width: 100%;
+    border-right: none;
   }
 }
 

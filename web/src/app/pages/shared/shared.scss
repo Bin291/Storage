@@ -104,6 +104,21 @@
   font-size: var(--fs-body-sm);
   opacity: 0.75;
 }
+.c-meta-sub {
+  display: none;
+  font-size: var(--fs-caption);
+  color: var(--c-body);
+  margin-top: 2px;
+}
+@media (max-width: 640px) {
+  .c-owner,
+  .c-size {
+    display: none !important;
+  }
+  .c-meta-sub {
+    display: block;
+  }
+}
 .c-act {
   width: 56px;
   text-align: right;

@@ -57,6 +57,7 @@
             </td>
             <td class="c-name">
               <button class="name-btn" (click)="openRow(row)">{{ row.name }}</button>
+              <div class="c-meta-sub">{{ row.ownerEmail ?? '—' }} · {{ row.size ? formatSize(+row.size) : '—' }}</div>
             </td>
             <td class="c-owner">{{ row.ownerEmail ?? '—' }}</td>
             <td class="c-size">{{ row.size ? formatSize(+row.size) : '—' }}</td>

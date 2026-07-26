@@ -16,8 +16,10 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
+  const webOriginSetting = config.get<string>('webOrigin') || '';
+  const origins = webOriginSetting.split(',').map(o => o.trim()).filter(Boolean);
   app.enableCors({
-    origin: config.get<string>('webOrigin'),
+    origin: origins.length > 0 ? origins : '*',
     credentials: true,
   });
   // Chunk upload đi QUA backend (proxy) để tránh phụ thuộc CORS của GCS (mục 5.A).

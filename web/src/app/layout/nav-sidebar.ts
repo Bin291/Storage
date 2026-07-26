@@ -14,6 +14,7 @@ import { GroupId, groupById } from '../core/file-groups';
 import { FolderTreeNode } from './folder-tree-node';
 import { Modal } from '../shared/modal';
 import { Avatar } from '../shared/avatar';
+import { Shell } from './shell';
 
 /**
  * Sidebar điều hướng cố định bên trái (mục 11.H): nút "+ Mới" (kiểu Google
@@ -35,6 +36,13 @@ export class NavSidebar {
   private readonly dropTarget = inject(DropTargetService);
   readonly stats = inject(StatsService);
   private readonly navEvents = inject(NavEventsService);
+  private readonly shell = inject(Shell, { optional: true });
+
+  closeSidebar(): void {
+    if (this.shell) {
+      this.shell.closeMobileSidebar();
+    }
+  }
 
   readonly rootFolders = signal<FolderItem[]>([]);
   /** Nhóm đang bung dropdown (mục 11.H). */
