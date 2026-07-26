@@ -16,9 +16,8 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
-  // Danh sách origin được phép — WEB_ORIGIN có thể liệt kê nhiều origin ngăn cách
-  // bằng dấu phẩy (VD "https://storage.binhh.id.vn,http://localhost:4200"), nhờ vậy
-  // MỘT API đã deploy phục vụ được cả web prod lẫn web chạy local.
+  // Danh sách origin được phép = WEB_ORIGIN (prod) + WEB_DEV (dev), nhờ vậy MỘT API
+  // đã deploy phục vụ được cả web prod lẫn web chạy local. Xem configuration.ts.
   const allowedOrigins = config.get<string[]>('webOrigins', []);
   // Localhost luôn được phép để dev không phải sửa env mỗi lần đổi cổng. CORS không
   // phải hàng rào bảo mật của API này (mọi route đều cần JWT Supabase) — nó chỉ

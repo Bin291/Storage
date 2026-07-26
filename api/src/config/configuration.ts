@@ -2,23 +2,34 @@
  * Cấu hình tập trung, đọc từ biến môi trường (xem .env.example).
  * Truy cập qua ConfigService: configService.get('gcs.bucket')...
  */
+
+/** Tách chuỗi origin (cho phép nhiều origin ngăn cách bằng dấu phẩy) + chuẩn hoá. */
+function splitOrigins(value: string): string[] {
+  return value
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+}
+
 export default () => ({
   env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
-  // WEB_ORIGIN nhận NHIỀU origin, ngăn cách bằng dấu phẩy — cùng 1 API Cloud Run
-  // phục vụ cả web đã deploy lẫn web chạy local:
-  //   WEB_ORIGIN=https://storage.binhh.id.vn,http://localhost:4200
-  // Dấu "/" ở cuối được cắt bỏ vì trình duyệt gửi header Origin KHÔNG có dấu này
+  // CORS: cùng 1 API Cloud Run phục vụ CẢ web đã deploy lẫn web chạy local.
+  //   WEB_ORIGIN = origin chính (prod), VD https://storage.binhh.id.vn
+  //   WEB_DEV    = origin phụ cho môi trường dev, VD http://localhost:4200
+  // Tách 2 biến để mỗi ô Name/Value trên Cloud Run giữ đúng 1 origin — không phải
+  // nhét dấu phẩy (gcloud còn cắt env var theo dấu phẩy). Mỗi biến vẫn nhận nhiều
+  // origin ngăn cách bằng dấu phẩy nếu cần.
+  // Dấu "/" ở cuối tự bị cắt vì trình duyệt gửi header Origin KHÔNG có dấu này
   // ("http://localhost:4200/" sẽ không bao giờ khớp).
-  webOrigins: (process.env.WEB_ORIGIN ?? 'http://localhost:4200')
-    .split(',')
-    .map((o) => o.trim().replace(/\/+$/, ''))
-    .filter(Boolean),
-  // Origin đầu tiên = origin "chính" (dùng làm gốc URL chia sẻ nếu thiếu SHARE_BASE_URL).
-  webOrigin: (process.env.WEB_ORIGIN ?? 'http://localhost:4200')
-    .split(',')[0]
-    .trim()
-    .replace(/\/+$/, ''),
+  webOrigins: [
+    ...splitOrigins(process.env.WEB_ORIGIN ?? 'http://localhost:4200'),
+    ...splitOrigins(process.env.WEB_DEV ?? ''),
+  ],
+  // Origin "chính" — dùng làm gốc URL chia sẻ nếu thiếu SHARE_BASE_URL (mục 12.G).
+  // Luôn lấy từ WEB_ORIGIN, KHÔNG lấy WEB_DEV (link chia sẻ phải trỏ web prod).
+  webOrigin:
+    splitOrigins(process.env.WEB_ORIGIN ?? 'http://localhost:4200')[0] ?? '',
 
   supabase: {
     url: process.env.SUPABASE_URL ?? '',
