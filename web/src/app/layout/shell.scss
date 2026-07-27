@@ -1,6 +1,10 @@
 .shell {
   position: relative;
+  /* 100vh trên mobile = chiều cao KHI thanh địa chỉ đã ẩn ⇒ app luôn cao hơn
+     màn hình thật, đáy bị thanh URL che mất. 100dvh co giãn theo thanh đó.
+     Dòng 100vh giữ lại làm dự phòng cho trình duyệt cũ chưa hiểu dvh. */
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -39,7 +43,10 @@
   display: flex;
   align-items: center;
   gap: var(--s-xl);
-  padding: 0 var(--s-xl);
+  /* max(): giữ padding thiết kế trên máy thường, nhưng khi máy có tai thỏ và
+     đang xoay ngang thì nới thêm đúng phần bị khuyết che. */
+  padding-left: max(var(--s-xl), var(--safe-l));
+  padding-right: max(var(--s-xl), var(--safe-r));
   border-bottom: 1px solid var(--c-hairline);
   background: var(--c-canvas);
   position: sticky;
@@ -95,6 +102,68 @@
   border-color: var(--c-accent);
   outline: none;
   box-shadow: 0 0 0 3px var(--c-accent-ring);
+}
+
+/* Dropdown gợi ý theo tên (tầng 1 của tìm kiếm — mục 11.M). */
+.suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 220;
+  padding: 6px 0;
+  max-height: min(60vh, 60dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--c-surface-card);
+  box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+.suggest-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--c-ink);
+  font-size: var(--fs-body-sm);
+  font-family: var(--font-sans);
+}
+.suggest-item:hover {
+  background: var(--c-surface-soft);
+}
+.suggest-item .mi {
+  color: var(--c-body);
+  flex-shrink: 0;
+}
+.suggest-item.ai .mi {
+  color: var(--c-accent);
+}
+.suggest-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.suggest-kbd {
+  flex-shrink: 0;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-hairline-strong);
+  color: var(--c-mute);
+}
+.suggest-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  padding: 10px 14px;
+  font-size: var(--fs-body-sm);
+  color: var(--c-mute);
 }
 
 .right {
@@ -193,6 +262,29 @@
   gap: 2px;
 }
 
+/* Nút gộp "tune" + menu của nó: CHỈ dùng ở khổ mobile (bật lại trong media
+   query ≤860px bên dưới) — desktop vẫn dùng dải nút trải ngang cho nhanh tay. */
+.tools-wrap {
+  display: none;
+}
+.tools-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: auto;
+  margin-top: 6px;
+  width: min(260px, calc(100vw - 24px));
+  z-index: 220;
+}
+.menu-label {
+  padding: 8px 16px 4px;
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-mute);
+}
+
 .body {
   flex: 1;
   min-height: 0;
@@ -219,9 +311,46 @@
     display: inline-flex;
   }
 
+  /* Một hàng không chứa nổi menu + logo + ô tìm kiếm + bộ lọc/sắp xếp + chuông:
+     ô tìm kiếm bị ép về 0px và các nút bên phải bị cắt mất khỏi màn hình.
+     ⇒ Xuống 2 hàng: hàng trên là điều hướng + hành động, hàng dưới là ô tìm
+     kiếm chiếm trọn bề ngang. */
   .topnav {
-    gap: var(--s-md);
-    padding: 0 var(--s-md);
+    height: auto;
+    flex-wrap: wrap;
+    gap: var(--s-sm) var(--s-md);
+    padding-top: var(--s-sm);
+    padding-bottom: var(--s-sm);
+    padding-left: max(var(--s-md), var(--safe-l));
+    padding-right: max(var(--s-md), var(--safe-r));
+  }
+
+  .search-bar {
+    order: 10; /* đẩy xuống sau .right ⇒ tự rơi xuống hàng thứ 2 */
+    flex-basis: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .right {
+    /* Chiếm nốt chỗ trống cạnh logo để hàng đầu KHÔNG bị bỏ trống rồi đẩy
+       hành động xuống hàng riêng (mất thêm một hàng trên màn hình nhỏ).
+       min-width: 0 cho phép dải hành động bên trong cuộn thay vì bị cắt. */
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+    gap: var(--s-xs);
+  }
+
+  /* Mobile: đổi dải nút trải ngang thành MỘT nút "tune" mở dropdown gộp
+     (loại tệp + sắp xếp + lưới/danh sách + tạo lại ảnh xem trước). Dải cuộn
+     ngang trước đây tuy không mất nút nào nhưng phải vuốt mới thấy hết —
+     dropdown cho thấy tất cả trong một lần mở. */
+  .topnav-actions {
+    display: none;
+  }
+  .tools-wrap {
+    display: inline-block;
   }
 
   app-nav-sidebar {
@@ -229,13 +358,19 @@
     top: 0;
     left: 0;
     bottom: 0;
-    width: 260px;
+    /* Không bao giờ rộng quá màn hình (điện thoại nhỏ 320px vẫn còn chỗ
+       thấy backdrop để biết bấm ra ngoài là đóng). */
+    width: min(260px, 84vw);
+    padding-left: var(--safe-l);
     background: var(--c-surface-card);
     border-right: 1px solid var(--c-hairline);
     z-index: 300;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: block !important;
+    /* Vuốt hết danh sách trong drawer thì dừng, không cuộn lây trang phía dưới. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
 
     &.sidebar-open {
       transform: translateX(0);
@@ -245,13 +380,16 @@
 }
 
 @media (max-width: 576px) {
+  /* Giữ chữ "Storage" cạnh logo: từ khi topnav xuống 2 hàng thì hàng đầu còn
+     rộng, mà bỏ chữ đi làm đầu trang trông trống trải (phản hồi UI ảnh 4). */
   .brand .wordmark {
-    display: none;
+    font-size: var(--fs-body-sm);
   }
 
   .topnav {
     gap: var(--s-xs);
-    padding: 0 var(--s-sm);
+    padding-left: max(var(--s-sm), var(--safe-l));
+    padding-right: max(var(--s-sm), var(--safe-r));
   }
 
   .search-bar {
@@ -270,8 +408,10 @@
   .upload-panel {
     right: var(--s-md) !important;
     left: var(--s-md) !important;
-    bottom: var(--s-md) !important;
+    /* Cộng thêm safe-area để panel không nằm dưới thanh gesture của iPhone. */
+    bottom: calc(var(--s-md) + var(--safe-b)) !important;
     width: auto !important;
+    max-height: 50dvh;
   }
 }
 
@@ -349,8 +489,9 @@
   top: calc(100% + 8px);
   right: 0;
   width: min(340px, calc(100vw - 32px));
-  max-height: 60vh;
+  max-height: min(60vh, 60dvh);
   overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 200;
   padding: 0;
   background: var(--c-surface-card);
@@ -413,9 +554,9 @@
 /* Upload progress panel */
 .upload-panel {
   position: fixed;
-  bottom: var(--s-xl);
-  right: var(--s-xl);
-  width: 320px;
+  bottom: calc(var(--s-xl) + var(--safe-b));
+  right: calc(var(--s-xl) + var(--safe-r));
+  width: min(320px, calc(100vw - 2 * var(--s-md)));
   max-height: 340px;
   display: flex;
   flex-direction: column;

@@ -136,6 +136,14 @@
 .opt-label {
   font-size: var(--fs-body-sm);
   color: var(--c-body);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.opt-hint {
+  font-size: var(--fs-caption);
+  color: var(--c-mute);
 }
 
 /* Toggle switch */

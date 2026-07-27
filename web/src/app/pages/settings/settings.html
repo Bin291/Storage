@@ -72,6 +72,22 @@
           }
         </div>
       </div>
+      <div class="opt-row">
+        <span class="opt-label">
+          Tên tệp trên màn hình nhỏ
+          <small class="opt-hint">Ở chế độ Lưới. Thư mục và chế độ Danh sách luôn hiện tên.</small>
+        </span>
+        <button
+          class="toggle"
+          [class.on]="prefs.mobileTileNames()"
+          role="switch"
+          [attr.aria-checked]="prefs.mobileTileNames()"
+          aria-label="Hiện tên tệp dưới ô lưới trên điện thoại và máy tính bảng"
+          (click)="toggleMobileNames()"
+        >
+          <span class="knob"></span>
+        </button>
+      </div>
     </div>
   </div>
 

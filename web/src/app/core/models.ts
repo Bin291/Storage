@@ -148,6 +148,7 @@ export interface ListParams {
   category?: string | null;
   extensions?: string[] | null; // lăng kính Loại (mục 11.H)
   recent?: boolean; // lăng kính Gần đây (mục 11.H)
+  q?: string; // tìm nhanh THEO TÊN (khác AI search — mục 11.M)
   sort?: SortField;
   order?: SortOrder;
   page?: number;

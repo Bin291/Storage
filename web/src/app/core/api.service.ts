@@ -53,6 +53,13 @@ export class ApiService {
     });
   }
 
+  /** Sao chép cả cây thư mục sang chỗ khác — bản sao THẬT (mục 11.N). */
+  copyFolder(id: string, parentId: string | null): Observable<FolderItem> {
+    return this.http.post<FolderItem>(`${this.base}/folders/${id}/copy`, {
+      parentId,
+    });
+  }
+
   moveFolder(id: string, parentId: string | null): Observable<FolderItem> {
     return this.http.patch<FolderItem>(`${this.base}/folders/${id}/move`, {
       parentId,
@@ -85,8 +92,10 @@ export class ApiService {
   // --- Files ---
   listFiles(params: ListParams): Observable<FileListResult> {
     let p = new HttpParams();
-    // Lăng kính Loại / Gần đây cắt ngang folder (mục 11.H) — ưu tiên trước.
-    if (params.extensions && params.extensions.length) {
+    // Tìm theo tên thắng mọi lăng kính khác: đang tìm thì phải quét cả kho.
+    if (params.q && params.q.trim()) {
+      p = p.set('q', params.q.trim());
+    } else if (params.extensions && params.extensions.length) {
       p = p.set('extensions', params.extensions.join(','));
     } else if (params.recent) {
       p = p.set('recent', 'true');
@@ -121,6 +130,13 @@ export class ApiService {
   renameFile(id: string, name: string): Observable<FileItem> {
     return this.http.patch<FileItem>(`${this.base}/files/${id}/rename`, {
       name,
+    });
+  }
+
+  /** Sao chép tệp sang thư mục khác — tốn thêm dung lượng (mục 11.N). */
+  copyFile(id: string, folderId: string | null): Observable<FileItem> {
+    return this.http.post<FileItem>(`${this.base}/files/${id}/copy`, {
+      folderId,
     });
   }
 

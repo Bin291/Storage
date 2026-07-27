@@ -4,7 +4,13 @@
   <meta charset="utf-8">
   <title>Web</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- viewport-fit=cover: cho phép nội dung tràn tới mép máy tai thỏ, phần
+       tránh vùng khuyết do env(safe-area-inset-*) trong CSS lo (shell.scss).
+       KHÔNG đặt user-scalable=no / maximum-scale — người dùng phải zoom được. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Màu thanh trạng thái trình duyệt di động khớp nền trang từng theme. -->
+  <meta name="theme-color" content="#fef7ff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#141218" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

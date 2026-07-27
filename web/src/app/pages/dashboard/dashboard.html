@@ -1,23 +1,64 @@
 <div class="dash">
-  <header class="dash-head">
-    <h1>Trang chủ</h1>
-    <p class="sub">Tóm tắt kho lưu trữ của bạn</p>
-  </header>
+  <!-- Hero: lời chào + vòng dung lượng, căn giữa — trên điện thoại nội dung
+       không còn dồn hết về mép trái (phản hồi UI ảnh 16). Dùng cùng ngôn ngữ
+       hình ảnh với vòng dung lượng ở trang Hồ sơ (ảnh 15) cho nhất quán. -->
+  <section class="hero card">
+    <p class="hello">Chào{{ firstName() ? ', ' + firstName() : '' }} 👋</p>
+    <h1>Kho lưu trữ của bạn</h1>
 
-  <!-- Thanh dung lượng (mục 11.E / 11.H) -->
-  <section class="card storage">
-    <div class="storage-top">
-      <div>
-        <span class="storage-used">{{ formatSize(usedBytes()) }}</span>
-        <span class="storage-quota">/ {{ formatSize(quota) }} đã dùng</span>
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 120 120" role="img" [attr.aria-label]="'Đã dùng ' + usedPct() + '%'">
+        <circle class="ring-track" cx="60" cy="60" r="52" />
+        <circle
+          class="ring-fill"
+          cx="60"
+          cy="60"
+          r="52"
+          [attr.stroke-dasharray]="ringCircumference"
+          [attr.stroke-dashoffset]="ringOffset()"
+        />
+      </svg>
+      <div class="ring-center">
+        <strong>{{ usedPct() }}%</strong>
+        <span>đã dùng</span>
       </div>
-      <span class="storage-pct">{{ usedPct() }}%</span>
     </div>
-    <div class="bar">
-      <div class="fill" [style.width.%]="usedPct()"></div>
+
+    <div class="stats">
+      <div class="stat">
+        <strong>{{ formatSize(usedBytes()) }}</strong>
+        <span>Đã dùng</span>
+      </div>
+      <div class="stat">
+        <strong>{{ formatSize(freeBytes()) }}</strong>
+        <span>Còn trống</span>
+      </div>
+      <div class="stat">
+        <strong>{{ usage()?.count ?? 0 }}</strong>
+        <span>Tệp</span>
+      </div>
     </div>
-    <p class="storage-count">{{ usage()?.count ?? 0 }} tệp</p>
   </section>
+
+  <!-- Truy cập nhanh theo loại (mục 11.H). Đáng giá nhất trên điện thoại: sidebar
+       "Theo loại" bị giấu sau nút ☰ nên đây là lối vào duy nhất thấy được ngay. -->
+  @if (groupsWithFiles().length > 0) {
+    <section class="block">
+      <div class="block-head">
+        <h2 class="block-title">Truy cập nhanh</h2>
+        <a routerLink="/files" class="see-all">Tất cả tệp →</a>
+      </div>
+      <div class="type-grid">
+        @for (g of groupsWithFiles(); track g.def.id) {
+          <a class="type-tile" [routerLink]="['/type', g.def.id]">
+            <span class="mi tt-ico" aria-hidden="true">{{ g.def.icon }}</span>
+            <span class="tt-label">{{ g.def.label }}</span>
+            <span class="tt-count">{{ g.count }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  }
 
   <!-- "Gần đây" thu nhỏ — giới hạn cứng 8, KHÔNG phải feed vô tận (mục 11.H) -->
   <section class="block">
@@ -32,15 +73,97 @@
     } @else {
       <div class="recent-strip">
         @for (f of recent(); track f.id) {
-          <a class="recent-item" routerLink="/recent" [title]="f.name">
-            <span class="mi ri-ico">{{ iconForExtension(f.extension) }}</span>
+          <div
+            class="recent-item"
+            [title]="f.name"
+            (click)="openPreview(f)"
+            style="cursor: pointer;"
+          >
+            @if (f.thumbnailUrl) {
+              <img class="ri-thumb" [src]="f.thumbnailUrl" alt="" loading="lazy" width="40" height="40" />
+            } @else {
+              <span class="mi ri-ico" aria-hidden="true">{{ iconForExtension(f.extension) }}</span>
+            }
             <span class="ri-body">
               <span class="ri-name">{{ f.name }}</span>
               <span class="ri-sub">{{ formatSize(f.size) }} · {{ formatDate(f.updatedAt) }}</span>
             </span>
-          </a>
+            <span class="mi ri-go" aria-hidden="true">chevron_right</span>
+          </div>
         }
       </div>
     }
   </section>
 </div>
+
+<!-- Preview đầy đủ (mục 2.2 / 11.I) — full-bleed kiểu Google Drive: nền mờ -->
+@if (previewFile(); as pf) {
+  <div class="preview-overlay" (click)="closePreview()">
+    <div class="preview-top" (click)="$event.stopPropagation()">
+      <span class="preview-title" [title]="pf.name">{{ pf.name }}</span>
+      <div class="preview-tools">
+        <button class="btn btn-ghost btn-icon" (click)="closePreview()" aria-label="Đóng xem trước" title="Đóng">
+          <span class="mi sm" aria-hidden="true">close</span>
+        </button>
+      </div>
+    </div>
+
+    @if (canPreviewPrev()) {
+      <button
+        class="preview-nav prev"
+        title="Tệp trước (←)"
+        (click)="previewPrev(); $event.stopPropagation()"
+      >
+        <span class="mi">chevron_left</span>
+      </button>
+    }
+    @if (canPreviewNext()) {
+      <button
+        class="preview-nav next"
+        title="Tệp sau (→)"
+        (click)="previewNext(); $event.stopPropagation()"
+      >
+        <span class="mi">chevron_right</span>
+      </button>
+    }
+
+    <div class="preview-body" (click)="$event.stopPropagation()">
+      @if (needsUrl(previewKind()) && !previewUrl()) {
+        <div class="state"><span class="spinner"></span> Đang mở…</div>
+      } @else if (previewKind() === 'image') {
+        <app-image-viewer [url]="previewUrl()!" [alt]="pf.name" />
+      } @else if (previewKind() === 'pdf') {
+        <iframe [src]="previewUrl()! | safeUrl" title="preview"></iframe>
+      } @else if (previewKind() === 'audio' || previewKind() === 'video') {
+        <app-media-player
+          [kind]="previewKind() === 'audio' ? 'audio' : 'video'"
+          [url]="previewUrl()!"
+          [title]="pf.name"
+          [poster]="pf.thumbnailUrl"
+        />
+      } @else if (previewKind() === 'docx') {
+        <app-docx-viewer [source]="previewSource()!" />
+      } @else if (previewKind() === 'sheet') {
+        <app-sheet-viewer [source]="previewSource()!" />
+      } @else if (previewKind() === 'text-raw') {
+        <app-text-viewer [source]="previewSource()!" [mode]="'raw'" />
+      } @else if (previewKind() === 'text-extract') {
+        <app-text-viewer [source]="previewSource()!" [mode]="'extract'" />
+      }
+    </div>
+
+    <div class="preview-bottom" (click)="$event.stopPropagation()">
+      <div class="preview-actions">
+        <button
+          class="btn btn-ghost btn-icon"
+          (click)="downloadFile(pf)"
+          aria-label="Tải xuống"
+          title="Tải xuống"
+        >
+          <span class="mi" aria-hidden="true">download</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

@@ -276,6 +276,34 @@ export class StorageService {
     );
   }
 
+  /**
+   * Sao chép object NGAY TRÊN GCS (server-side) — byte không đi vòng qua backend.
+   * Dùng cho tính năng Sao chép/Dán (mục 11.N): copy 2GB cũng chỉ là 1 lệnh API,
+   * không tốn băng thông Cloud Run.
+   *
+   * Trả `false` nếu object nguồn không tồn tại (VD tệp chưa có thumbnail) —
+   * gọi bên ngoài coi đó là bình thường, không phải lỗi.
+   */
+  async copyObject(srcKey: string, destKey: string): Promise<boolean> {
+    const { CopyObjectCommand } = await import('@aws-sdk/client-s3');
+    try {
+      await this.client.send(
+        new CopyObjectCommand({
+          Bucket: this.bucket,
+          // CopySource phải là "bucket/key" và ĐÃ mã hoá URL — tên tệp/id có
+          // ký tự lạ (dấu cách, unicode) sẽ làm hỏng chữ ký nếu để nguyên.
+          CopySource: encodeURI(`${this.bucket}/${srcKey}`),
+          Key: destKey,
+        }),
+      );
+      return true;
+    } catch (err) {
+      const name = (err as { name?: string }).name;
+      if (name === 'NoSuchKey' || name === 'NotFound') return false;
+      throw err;
+    }
+  }
+
   async deleteObject(key: string): Promise<void> {
     try {
       await this.client.send(

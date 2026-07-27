@@ -56,3 +56,15 @@
   padding: 40px var(--s-md) !important;
 }
 
+/* Trang Word có bề ngang cố định (A4 ≈ 794px) — trên điện thoại phải cho
+   khung tự cuộn ngang, nếu không nó nong cả overlay ra rộng hơn màn hình. */
+@media (max-width: 820px) {
+  :host {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  :host ::ng-deep .docx-render-wrapper {
+    padding: var(--s-md) var(--s-sm) !important;
+  }
+}
+

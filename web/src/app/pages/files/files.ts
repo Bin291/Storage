@@ -17,6 +17,7 @@ import { RealtimeService } from '../../core/realtime.service';
 import { ViewPrefsService } from '../../core/view-prefs.service';
 import { ToolbarService } from '../../core/toolbar.service';
 import { StatsService } from '../../core/stats.service';
+import { ClipboardService, ClipEntry } from '../../core/clipboard.service';
 import { NavEventsService } from '../../core/nav-events.service';
 import { DropTargetService } from '../../core/drop-target.service';
 import {
@@ -86,6 +87,7 @@ export class Files {
   readonly toolbar = inject(ToolbarService);
   private readonly realtime = inject(RealtimeService);
   private readonly stats = inject(StatsService);
+  readonly clipboard = inject(ClipboardService);
   private readonly navEvents = inject(NavEventsService);
   private readonly dropTarget = inject(DropTargetService);
   private readonly destroyRef = inject(DestroyRef);
@@ -294,6 +296,123 @@ export class Files {
     this.closeDetail();
   }
 
+  // --- Sao chép / Cắt / Dán (mục 11.N) ---
+
+  /**
+   * Các mục sẽ vào bảng nháp: ưu tiên lựa chọn nhiều, không có thì lấy mục
+   * đang được tô sáng (activeKey) — giống Explorer.
+   */
+  readonly clipTargets = computed<ClipEntry[]>(() => {
+    const keys = this.selectedKeys().size
+      ? [...this.selectedKeys()]
+      : this.activeKey()
+        ? [this.activeKey() as string]
+        : [];
+    const out: ClipEntry[] = [];
+    for (const key of keys) {
+      const [kind, id] = key.split(':') as [ItemKind, string];
+      const name =
+        kind === 'file'
+          ? this.files().find((f) => f.id === id)?.name
+          : this.subfolders().find((f) => f.id === id)?.name;
+      if (name) out.push({ kind, id, name });
+    }
+    return out;
+  });
+
+  /**
+   * Chỉ DÁN được khi đang ở lăng kính Thư mục (mục 11.H). Các lăng kính khác
+   * (Theo loại / Gần đây / Có gắn dấu sao) là kết quả truy vấn cắt ngang cây —
+   * không có "thư mục đang mở" để dán vào, nên nút Dán bị ẩn ở đó.
+   */
+  readonly canPaste = computed(
+    () => this.isBrowse() && this.clipboard.hasContent(),
+  );
+
+  copySelection(): void {
+    const items = this.clipTargets();
+    if (!items.length) return;
+    this.clipboard.copy(items);
+    this.closeMenu();
+    this.closeBulkMenu();
+    this.flash(
+      items.length === 1
+        ? `Đã sao chép “${items[0].name}”`
+        : `Đã sao chép ${items.length} mục`,
+    );
+  }
+
+  cutSelection(): void {
+    const items = this.clipTargets();
+    if (!items.length) return;
+    this.clipboard.cut(items);
+    this.closeMenu();
+    this.closeBulkMenu();
+    this.flash(
+      items.length === 1
+        ? `Đã cắt “${items[0].name}”`
+        : `Đã cắt ${items.length} mục`,
+    );
+  }
+
+  readonly pasting = signal(false);
+
+  paste(): void {
+    if (!this.canPaste() || this.pasting()) return;
+    const target = this.folderId() ?? null;
+    const items = this.clipboard.entries();
+    const mode = this.clipboard.mode();
+
+    // Cắt rồi dán vào đúng chỗ cũ = không làm gì (tránh gọi API vô ích và
+    // tránh bị đổi tên thành "(1)" một cách khó hiểu).
+    const same = items.filter((it) => it.kind === 'folder' && it.id === target);
+    if (same.length) {
+      this.flash('Không thể dán thư mục vào chính nó');
+      return;
+    }
+
+    this.pasting.set(true);
+    const reqs = items.map((it) => {
+      if (mode === 'copy') {
+        return it.kind === 'file'
+          ? this.api.copyFile(it.id, target)
+          : this.api.copyFolder(it.id, target);
+      }
+      return it.kind === 'file'
+        ? this.api.moveFile(it.id, target)
+        : this.api.moveFolder(it.id, target);
+    });
+
+    forkJoin(reqs).subscribe({
+      next: () => {
+        this.pasting.set(false);
+        // "Cắt" chỉ dùng được 1 lần (mục đã chuyển đi rồi); "Sao chép" giữ lại
+        // trong bảng nháp để dán tiếp vào nhiều thư mục khác.
+        if (mode === 'cut') this.clipboard.clear();
+        this.stats.refreshSoon();
+        this.reload();
+        this.flash(
+          mode === 'copy'
+            ? `Đã dán ${items.length} mục (bản sao)`
+            : `Đã chuyển ${items.length} mục vào đây`,
+        );
+      },
+      error: (err) => {
+        this.pasting.set(false);
+        this.flash(err?.error?.message ?? 'Dán thất bại');
+      },
+    });
+  }
+
+  /** Thông báo ngắn ở góc — đủ cho các thao tác không mở dialog. */
+  readonly toast = signal<string | null>(null);
+  private toastTimer?: ReturnType<typeof setTimeout>;
+  private flash(msg: string): void {
+    this.toast.set(msg);
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.toast.set(null), 2600);
+  }
+
   /** Tải xuống tất cả mục đang chọn — nén thành 1 zip bất đồng bộ (mục 11.J). */
   downloadSelected(): void {
     const fileIds: string[] = [];
@@ -367,6 +486,19 @@ export class Files {
     this.toolbar.category.set(null);
     this.toolbar.onRetryMissing = () => this.retryAllMissingThumbnails();
 
+    // Xoay ngang/dọc hay đổi cỡ cửa sổ qua ngưỡng thì cập nhật lại, và đóng
+    // panel nếu đang mở mà màn vừa hẹp lại.
+    if (this.narrowMq) {
+      const onChange = (e: MediaQueryListEvent) => {
+        this.isNarrow.set(e.matches);
+        if (e.matches) this.closeDetail();
+      };
+      this.narrowMq.addEventListener('change', onChange);
+      inject(DestroyRef).onDestroy(() =>
+        this.narrowMq?.removeEventListener('change', onChange),
+      );
+    }
+
     effect(() => {
       this.toolbar.isBrowse.set(this.isBrowse());
     });
@@ -428,12 +560,37 @@ export class Files {
       window.removeEventListener('scroll', onScroll, true),
     );
 
-    // Phím tắt khi đang mở preview toàn màn hình: ←/→ lướt file, Esc đóng.
+    // Phím tắt: ←/→/Esc khi đang mở preview; Ctrl+C / Ctrl+X / Ctrl+V cho
+    // Sao chép/Cắt/Dán (mục 11.N).
     const onKeydown = (ev: KeyboardEvent): void => {
-      if (!this.previewFile()) return;
-      if (ev.key === 'ArrowRight') this.previewNext();
-      else if (ev.key === 'ArrowLeft') this.previewPrev();
-      else if (ev.key === 'Escape') this.closePreview();
+      if (this.previewFile()) {
+        if (ev.key === 'ArrowRight') this.previewNext();
+        else if (ev.key === 'ArrowLeft') this.previewPrev();
+        else if (ev.key === 'Escape') this.closePreview();
+        return;
+      }
+
+      // Đang gõ trong ô nhập (đổi tên, tìm kiếm...) thì Ctrl+C/V là thao tác
+      // văn bản bình thường — không cướp phím của người dùng.
+      const el = ev.target as HTMLElement | null;
+      const typing =
+        !!el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.isContentEditable);
+      if (typing || !(ev.ctrlKey || ev.metaKey)) return;
+
+      const k = ev.key.toLowerCase();
+      if (k === 'c' && this.clipTargets().length) {
+        ev.preventDefault();
+        this.copySelection();
+      } else if (k === 'x' && this.clipTargets().length) {
+        ev.preventDefault();
+        this.cutSelection();
+      } else if (k === 'v' && this.canPaste()) {
+        ev.preventDefault();
+        this.paste();
+      }
     };
     window.addEventListener('keydown', onKeydown);
     this.destroyRef.onDestroy(() => window.removeEventListener('keydown', onKeydown));
@@ -663,6 +820,11 @@ export class Files {
         const cur = this.detail();
         if (cur && cur.id === item.id) {
           this.detail.set({ ...cur, isStarred: next });
+        }
+        // Đồng bộ preview đang mở cùng file.
+        const prev = this.previewFile();
+        if (prev && prev.id === item.id) {
+          this.previewFile.set({ ...prev, isStarred: next });
         }
       } else {
         this.subfolders.update((list) =>
@@ -903,12 +1065,27 @@ export class Files {
   }
 
   // --- Panel chi tiết bên phải (tham chiếu hình 35-36) ---
+  /**
+   * Màn hẹp (điện thoại/tablet): KHÔNG mở panel chi tiết nữa (phản hồi UI).
+   * Chặn ngay ở tầng logic chứ không chỉ ẩn bằng CSS, vì mở panel còn kéo theo
+   * 1 request ký URL xem trước — ẩn bằng CSS thì vẫn tốn request đó vô ích.
+   */
+  private readonly narrowMq =
+    typeof window !== 'undefined' && 'matchMedia' in window
+      ? window.matchMedia('(max-width: 960px)')
+      : null;
+  readonly isNarrow = signal(this.narrowMq?.matches ?? false);
+
   readonly detail = signal<FileItem | null>(null);
   readonly detailUrl = signal<string | null>(null);
   readonly detailKind = signal<PreviewKind>('other');
 
   selectFile(file: FileItem): void {
     this.closeMenu();
+    if (this.isNarrow()) {
+      this.openPreview(file);
+      return;
+    }
     this.detail.set(file);
     const kind = previewKindForExtension(file.extension);
     this.detailKind.set(kind);

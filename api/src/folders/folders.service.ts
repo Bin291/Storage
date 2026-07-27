@@ -11,6 +11,7 @@ import { CacheService } from '../cache/cache.service';
 import { StorageService } from '../storage/storage.service';
 import { resolveNameConflict } from '../common/name-conflict';
 import { CleanupJob, QUEUE } from '../jobs/queue.constants';
+import { FilesService } from '../files/files.service';
 
 export interface BreadcrumbNode {
   id: string;
@@ -23,6 +24,9 @@ export class FoldersService {
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly storage: StorageService,
+    // Dùng lại nguyên logic copy tệp (copy object GCS + chép vector) thay vì
+    // viết lại ở đây — xem FilesService.copy().
+    private readonly files: FilesService,
     @InjectQueue(QUEUE.CLEANUP) private readonly cleanupQueue: Queue<CleanupJob>,
   ) {}
 
@@ -158,6 +162,83 @@ export class FoldersService {
     });
     await this.invalidate(userId);
     return updated;
+  }
+
+  /**
+   * Sao chép cả cây thư mục (mục 11.N). Đệ quy: tạo thư mục mới rồi chép từng
+   * tệp con (FilesService.copy — copy object server-side trên GCS) và từng thư
+   * mục con.
+   *
+   * Chạy ĐỒNG BỘ trong request, không đẩy vào BullMQ: quy mô cá nhân thì cây
+   * nhỏ, và người dùng cần thấy thư mục mới xuất hiện ngay sau khi bấm Dán.
+   * Nếu sau này gặp cây hàng nghìn tệp thì mới cần chuyển sang job nền
+   * (cùng khuôn với zip ở mục 5.E).
+   */
+  async copy(
+    userId: string,
+    folderId: string,
+    targetParentId: string | null,
+  ): Promise<Folder> {
+    const src = await this.assertOwned(userId, folderId);
+    if (src.deletedAt) {
+      throw new BadRequestException(
+        'Thư mục đang ở Thùng rác, không sao chép được',
+      );
+    }
+    if (targetParentId) {
+      await this.assertOwned(userId, targetParentId);
+      // Dán vào chính nó hoặc vào con cháu của nó = đệ quy vô tận.
+      if (targetParentId === folderId) {
+        throw new BadRequestException('Không thể sao chép thư mục vào chính nó');
+      }
+      const descendants = await this.collectDescendantFolderIds(userId, folderId);
+      if (descendants.has(targetParentId)) {
+        throw new BadRequestException(
+          'Không thể sao chép thư mục vào thư mục con của nó',
+        );
+      }
+    }
+    return this.copyTree(userId, src, targetParentId, true);
+  }
+
+  /**
+   * @param resolveName chỉ đặt lại tên chống trùng ở CẤP GỐC của thao tác dán;
+   * các cấp con giữ nguyên tên vì chúng nằm trong thư mục mới tinh (không thể trùng).
+   */
+  private async copyTree(
+    userId: string,
+    src: Folder,
+    targetParentId: string | null,
+    resolveName: boolean,
+  ): Promise<Folder> {
+    const name = resolveName
+      ? resolveNameConflict(
+          src.name,
+          await this.siblingFolderNames(userId, targetParentId),
+        )
+      : src.name;
+
+    const created = await this.prisma.folder.create({
+      data: { name, parentId: targetParentId, userId },
+    });
+
+    const files = await this.prisma.file.findMany({
+      where: { userId, folderId: src.id, deletedAt: null, status: 'ready' },
+      select: { id: true },
+    });
+    for (const f of files) {
+      await this.files.copy(userId, f.id, created.id);
+    }
+
+    const children = await this.prisma.folder.findMany({
+      where: { userId, parentId: src.id, deletedAt: null },
+    });
+    for (const child of children) {
+      await this.copyTree(userId, child, created.id, false);
+    }
+
+    await this.invalidate(userId);
+    return created;
   }
 
   async setStar(

@@ -1,5 +1,10 @@
 .auth {
+  /* dvh: 100vh trên mobile tính cả phần bị thanh địa chỉ che ⇒ form bị đẩy
+     lệch xuống, phải cuộn mới thấy nút. */
   min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: var(--safe-t);
+  padding-bottom: var(--safe-b);
   display: flex;
   align-items: center;
   justify-content: center;

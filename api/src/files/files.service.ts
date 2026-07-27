@@ -84,11 +84,18 @@ export class FilesService {
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
 
-    // 2 lăng kính CẮT NGANG mọi folder (mục 11.H): Loại (có extensions) & Gần đây.
-    // Không ràng buộc folderId, và đính kèm folderPath cho từng dòng.
-    const crossFolder = exts.length > 0 || !!q.recent;
+    // Tìm theo tên: cũng cắt ngang folder (tìm trong toàn bộ kho, không chỉ
+    // thư mục đang mở) — nếu không thì gõ tên tệp ở thư mục khác sẽ không ra.
+    const nameQuery = (q.q ?? '').trim();
 
-    if (crossFolder) {
+    // Các lăng kính CẮT NGANG mọi folder (mục 11.H): Loại (có extensions),
+    // Gần đây, và tìm theo tên. Không ràng buộc folderId, đính kèm folderPath.
+    const crossFolder = exts.length > 0 || !!q.recent || nameQuery.length > 0;
+
+    if (nameQuery) {
+      where.name = { contains: nameQuery, mode: 'insensitive' };
+      if (exts.length) where.extension = { in: exts };
+    } else if (crossFolder) {
       if (exts.length) where.extension = { in: exts };
     } else if (q.starred) {
       where.isStarred = true;
@@ -288,6 +295,92 @@ export class FilesService {
     });
     await this.invalidate(userId);
     return updated;
+  }
+
+  /**
+   * Sao chép 1 tệp sang thư mục khác (mục 11.N — Sao chép/Dán).
+   *
+   * Khác `move()` ở chỗ tạo BẢN SAO THẬT: object mới trên GCS + row mới trong DB
+   * ⇒ **tốn thêm dung lượng đúng bằng kích thước tệp**. Byte được copy
+   * server-side trên GCS nên không đi qua Cloud Run.
+   *
+   * Chép luôn cả `DocumentChunk` (text + vector) thay vì đẩy lại job AI: nội dung
+   * y hệt bản gốc nên embedding cũng y hệt — chép row rẻ hơn nhiều so với gọi lại
+   * Gemini, và bản sao tìm được ngay bằng AI search chứ không phải chờ xử lý.
+   */
+  async copy(
+    userId: string,
+    fileId: string,
+    targetFolderId: string | null,
+  ): Promise<File> {
+    const src = await this.assertOwned(userId, fileId);
+    if (src.deletedAt) {
+      throw new BadRequestException('Tệp đang ở Thùng rác, không sao chép được');
+    }
+    if (src.status !== 'ready') {
+      throw new BadRequestException(
+        'Chỉ sao chép được tệp đã xử lý xong (trạng thái "sẵn sàng")',
+      );
+    }
+    if (targetFolderId) {
+      const target = await this.prisma.folder.findFirst({
+        where: { id: targetFolderId, userId, deletedAt: null },
+      });
+      if (!target) throw new NotFoundException('Thư mục đích không tồn tại');
+    }
+
+    const id = crypto.randomUUID();
+    const destKey = this.storage.buildKey(userId, id);
+    // Object gốc PHẢI copy được, nếu lỗi thì ném luôn — không tạo row trỏ vào
+    // object không tồn tại. Thumbnail/artifact thì best-effort (có thể chưa sinh).
+    await this.storage.copyObject(src.r2Key, destKey);
+
+    let thumbnailUrl: string | null = null;
+    const thumbCopied = await this.storage.copyObject(
+      this.storage.thumbnailKey(userId, src.id),
+      this.storage.thumbnailKey(userId, id),
+    );
+    if (thumbCopied) {
+      thumbnailUrl = await this.storage.presignDownload(
+        this.storage.thumbnailKey(userId, id),
+        7 * 24 * 3600,
+      );
+    }
+    await this.storage.copyObject(
+      this.storage.artifactKey(userId, src.id),
+      this.storage.artifactKey(userId, id),
+    );
+
+    const finalName = resolveNameConflict(
+      src.name,
+      await this.siblingFileNames(userId, targetFolderId),
+    );
+
+    const created = await this.prisma.file.create({
+      data: {
+        id,
+        name: finalName,
+        extension: src.extension,
+        r2Key: destKey,
+        thumbnailUrl,
+        size: src.size,
+        userId,
+        folderId: targetFolderId,
+        status: 'ready',
+      },
+    });
+
+    // Chép vector sang bản sao (raw SQL vì cột `embedding` là Unsupported("vector")
+    // — Prisma Client không đọc/ghi được kiểu này qua API thường, mục 7.B).
+    await this.prisma.$executeRaw`
+      insert into "DocumentChunk" ("id", "fileId", "content", "chunkIndex", "embedding")
+      select gen_random_uuid(), ${created.id}, dc."content", dc."chunkIndex", dc."embedding"
+      from "DocumentChunk" dc
+      where dc."fileId" = ${src.id}
+    `;
+
+    await this.invalidate(userId);
+    return created;
   }
 
   async setStar(

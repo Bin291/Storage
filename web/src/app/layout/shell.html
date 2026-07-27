@@ -12,19 +12,116 @@
     </a>
 
     <div class="search-bar">
-      <span class="mi search-ico">search</span>
+      <span class="mi search-ico" aria-hidden="true">search</span>
       <input
         class="search-input"
         type="text"
-        placeholder="Tìm kiếm tệp bằng AI..."
+        placeholder="Tìm tên tệp, hoặc Enter để hỏi AI…"
+        aria-label="Tìm kiếm tệp"
+        autocomplete="off"
+        spellcheck="false"
         [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
+        (ngModelChange)="onSearchInput($event)"
         (keyup.enter)="triggerSearch()"
+        (keyup.escape)="closeSuggest()"
+        (focus)="searchQuery().trim().length >= 2 && suggestOpen.set(true)"
       />
+
+      <!-- Tầng 1: gợi ý THEO TÊN (không tốn quota AI). Tầng 2 là dòng cuối —
+           nhấn Enter mới chạy AI ngữ nghĩa (mục 8.C / 11.M). -->
+      @if (suggestOpen()) {
+        <div class="menu-backdrop" (click)="closeSuggest()"></div>
+        <div class="suggest card">
+          @if (nameHits().length > 0) {
+            <div class="menu-label">Theo tên</div>
+            @for (f of nameHits(); track f.id) {
+              <button class="suggest-item" (click)="openHit(f)">
+                <span class="mi sm" aria-hidden="true">draft</span>
+                <span class="suggest-name">{{ f.name }}</span>
+              </button>
+            }
+          } @else if (!suggestLoading()) {
+            <div class="suggest-empty">Không có tệp nào trùng tên.</div>
+          }
+
+          @if (suggestLoading()) {
+            <div class="suggest-empty"><span class="spinner"></span> Đang tìm…</div>
+          }
+
+          <div class="menu-divider"></div>
+          <button class="suggest-item ai" (click)="triggerSearch()">
+            <span class="mi sm" aria-hidden="true">auto_awesome</span>
+            <span class="suggest-name">Hỏi AI: “{{ searchQuery() }}”</span>
+            <span class="suggest-kbd">Enter</span>
+          </button>
+        </div>
+      }
     </div>
 
     <div class="right">
       @if (toolbar.showFilters()) {
+        <!-- Mobile: gom toàn bộ lọc/sắp xếp/hiển thị vào MỘT dropdown, thay cho
+             dải nút cuộn ngang trước đây (phản hồi UI: "làm kiểu menu dropdown"). -->
+        <div class="custom-select-wrap tools-wrap">
+          <button
+            class="btn btn-icon btn-ghost tools-btn"
+            aria-label="Bộ lọc và sắp xếp"
+            title="Bộ lọc và sắp xếp"
+            (click)="toolsMenuOpen.set(!toolsMenuOpen())"
+          >
+            <span class="mi sm" aria-hidden="true">tune</span>
+          </button>
+
+          @if (toolsMenuOpen()) {
+            <div class="menu-backdrop select-menu-backdrop" (click)="toolsMenuOpen.set(false)"></div>
+            <div class="menu select-menu tools-menu">
+              @if (toolbar.isBrowse()) {
+                <div class="menu-label">Loại tệp</div>
+                @for (c of categories; track c.value) {
+                  <button
+                    class="select-item"
+                    [class.active]="toolbar.category() === c.value"
+                    (click)="selectCategory(c.value); toolsMenuOpen.set(false)"
+                  >
+                    <span>{{ c.label }}</span>
+                    @if (toolbar.category() === c.value) {
+                      <span class="mi sm select-check" aria-hidden="true">check</span>
+                    }
+                  </button>
+                }
+                <div class="menu-divider"></div>
+              }
+
+              <div class="menu-label">Sắp xếp theo</div>
+              @for (s of sortOptions; track s.value) {
+                <button class="select-item" [class.active]="toolbar.sort() === s.value" (click)="toolbar.setSort(s.value)">
+                  <span>{{ s.label }}</span>
+                  @if (toolbar.sort() === s.value) {
+                    <span class="mi sm select-check" aria-hidden="true">
+                      {{ toolbar.order() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                    </span>
+                  }
+                </button>
+              }
+
+              <div class="menu-divider"></div>
+              <div class="menu-label">Hiển thị</div>
+              <button class="select-item" (click)="prefs.toggleMode(); toolsMenuOpen.set(false)">
+                <span>{{ prefs.mode() === 'grid' ? 'Chuyển sang danh sách' : 'Chuyển sang lưới' }}</span>
+                <span class="mi sm" aria-hidden="true">{{ prefs.mode() === 'grid' ? 'view_list' : 'grid_view' }}</span>
+              </button>
+              <button
+                class="select-item"
+                [disabled]="toolbar.retryingAllThumbnails()"
+                (click)="toolbar.onRetryMissing ? toolbar.onRetryMissing() : null; toolsMenuOpen.set(false)"
+              >
+                <span>Tạo lại ảnh xem trước</span>
+                <span class="mi sm" aria-hidden="true">auto_fix_high</span>
+              </button>
+            </div>
+          }
+        </div>
+
         <div class="topnav-actions">
           @if (toolbar.isBrowse()) {
             <div class="custom-select-wrap">
@@ -66,7 +163,8 @@
           </div>
 
           <button
-            class="btn btn-icon btn-secondary btn-sm"
+            class="btn btn-icon btn-ghost btn-sm"
+            aria-label="Tạo lại ảnh xem trước còn thiếu"
             [disabled]="toolbar.retryingAllThumbnails()"
             [title]="
               toolbar.retryAllThumbnailsResult() !== null
@@ -79,7 +177,8 @@
           </button>
 
           <button
-            class="btn btn-icon btn-secondary btn-sm"
+            class="btn btn-icon btn-ghost btn-sm"
+            [attr.aria-label]="prefs.mode() === 'grid' ? 'Chuyển sang danh sách' : 'Chuyển sang lưới'"
             (click)="prefs.toggleMode()"
             [title]="prefs.mode() === 'grid' ? 'Chuyển sang danh sách' : 'Chuyển sang lưới'"
           >
@@ -91,7 +190,8 @@
       <!-- Chuông thông báo (mục 12.J) — nhận realtime + nạp lịch sử khi mở app. -->
       <div class="bell-wrap">
         <button
-          class="btn btn-icon btn-secondary btn-sm bell-btn"
+          class="btn btn-icon btn-ghost btn-sm bell-btn"
+          [attr.aria-label]="inbox.unread() > 0 ? inbox.unread() + ' thông báo chưa đọc' : 'Thông báo'"
           [title]="inbox.unread() > 0 ? inbox.unread() + ' thông báo chưa đọc' : 'Thông báo'"
           (click)="toggleInbox($event)"
         >

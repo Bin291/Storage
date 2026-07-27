@@ -65,6 +65,11 @@ export class Settings {
     this.prefs.density.set(v);
   }
 
+  /** Bật/tắt hiện tên tệp dưới ô lưới ở màn hình nhỏ (mục 11.M). */
+  toggleMobileNames(): void {
+    this.prefs.mobileTileNames.set(!this.prefs.mobileTileNames());
+  }
+
   toggleNotify(): void {
     const next = !this.prefs.notifyOnDone();
     if (

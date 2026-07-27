@@ -32,6 +32,13 @@ export class ListFilesQuery {
   @IsString()
   extensions?: string;
 
+  // Tìm nhanh THEO TÊN (không phải AI — mục 8.C là đường riêng): khớp chuỗi con,
+  // không phân biệt hoa/thường, cắt ngang mọi folder. Dùng cho dropdown gợi ý ở
+  // ô tìm kiếm — rẻ, không tốn quota Gemini, chạy ngay khi người dùng đang gõ.
+  @IsOptional()
+  @IsString()
+  q?: string;
+
   // Lăng kính "Gần đây" (mục 11.H): mọi file của user, sắp theo updatedAt desc,
   // không ràng buộc folder. Kèm folderPath cho từng dòng.
   @IsOptional()

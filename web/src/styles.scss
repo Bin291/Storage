@@ -26,6 +26,65 @@ body {
   font-size: var(--fs-body-md);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  // Không bao giờ cuộn ngang cả trang: nội dung nào rộng quá thì tự cuộn
+  // trong khung của nó (VD .table-scroll), không đẩy cả layout lệch đi.
+  overflow-x: hidden;
+}
+
+// --- Chạm (mobile) ---
+// touch-action: manipulation bỏ độ trễ ~300ms do trình duyệt chờ xem có
+// double-tap-to-zoom hay không ⇒ nút bấm phản hồi tức thì trên điện thoại.
+button,
+a,
+label,
+summary,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Thiết bị chạm (ngón tay, không phải chuột): mọi thứ bấm được phải đạt
+// tối thiểu 44px theo cả 2 chiều. Dùng pseudo-element phủ ra ngoài thay vì
+// tăng width/height thật để KHÔNG phá bố cục dày đặc trên desktop.
+@media (pointer: coarse) {
+  .btn-sm,
+  .btn-icon,
+  .star,
+  .menu button,
+  .preview-nav,
+  .c-actions button {
+    position: relative;
+  }
+
+  .btn-sm::after,
+  .btn-icon::after,
+  .star::after,
+  .preview-nav::after,
+  .c-actions button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+// Tôn trọng thiết lập "giảm chuyển động" của hệ điều hành (a11y). Không tắt
+// hẳn transition (mất phản hồi thị giác) mà rút gần như tức thì.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 // --- Scrollbar tinh tế toàn cục (overlay mảnh, chỉ hiện khi hover) ---
@@ -274,11 +333,25 @@ pre,
   }
 }
 
+// Khung cuộn ngang cho bảng trên màn hẹp: bảng nào không ẩn hết cột được thì
+// bọc trong .table-scroll để chính nó cuộn, không kéo lệch cả trang.
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  // Chặn "cuộn dây chuyền" sang cả trang khi vuốt hết mép bảng.
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 // Dropdown menu dùng chung (context menu file/folder, "+ Mới" ở sidebar — mục 11.H)
 .menu {
   position: fixed;
   z-index: 220;
-  width: 220px;
+  // Màn hẹp: menu không được rộng hơn màn hình.
+  width: min(220px, calc(100vw - 24px));
+  max-height: min(70vh, 70dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   padding: 6px 0;
@@ -340,3 +413,256 @@ pre,
   inset: 0;
   z-index: 50;
 }
+
+/* Preview overlay — full-bleed kiểu Google Drive: nền mờ (backdrop blur),
+   thanh trên cùng + mũi tên lướt file, không phải dialog nhỏ giữa màn hình. */
+.preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(12, 12, 14, 0.6);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  display: flex;
+  flex-direction: column;
+}
+.preview-top {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-md);
+  padding: var(--s-lg) var(--s-xl);
+  /* Overlay phủ toàn màn (kể cả vùng tai thỏ vì viewport-fit=cover) nên hàng
+     tiêu đề + nút Đóng phải tự né, không thì bị khuyết che mất nút. */
+  padding-top: calc(var(--s-lg) + var(--safe-t));
+  padding-left: max(var(--s-xl), var(--safe-l));
+  padding-right: max(var(--s-xl), var(--safe-r));
+}
+.preview-title {
+  font-weight: 500;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* min-width: 0 là thứ THỰC SỰ làm text-overflow chạy trong flex: thiếu nó,
+     flex item lấy kích thước tối thiểu theo nội dung nên tên dài đẩy nút Tải
+     xuống/Đóng ra khỏi màn hình thay vì bị cắt "…" (phản hồi UI ảnh 9). */
+  min-width: 0;
+  flex: 1;
+}
+.preview-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  flex-shrink: 0;
+}
+.preview-tools .btn-ghost,
+.preview-tools .btn-icon {
+  color: #fff;
+}
+.preview-tools .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.preview-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 96px var(--s-xxl);
+  overflow: hidden;
+}
+.preview-body > .state {
+  margin: auto;
+  color: #fff;
+}
+.preview-body iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+  border-radius: var(--r-md);
+}
+.preview-body app-docx-viewer,
+.preview-body app-sheet-viewer,
+.preview-body app-text-viewer {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+/* Mũi tên lướt qua lại giữa các file (mục phản hồi UI — kiểu Google Drive) */
+.preview-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-full);
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.preview-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.preview-nav.prev {
+  left: var(--s-xl);
+}
+.preview-nav.next {
+  right: var(--s-xl);
+}
+
+@media (max-width: 720px) {
+  .preview-body {
+    padding: 0 var(--s-md) calc(var(--s-lg) + var(--safe-b));
+  }
+  /* 38px là dưới ngưỡng chạm 44px — nhưng 2 nút này nằm sát mép trái/phải
+     nên phóng to sẽ đè lên nội dung; vùng bấm được nới bằng ::after ở
+     styles.scss (@media pointer: coarse) mà không đổi kích thước hình. */
+  .preview-nav {
+    width: 38px;
+    height: 38px;
+  }
+  .preview-nav.prev { left: max(var(--s-sm), var(--safe-l)); }
+  .preview-nav.next { right: max(var(--s-sm), var(--safe-r)); }
+  .preview-top {
+    padding: calc(var(--s-md) + var(--safe-t)) var(--s-md) var(--s-md);
+  }
+  .preview-body {
+    padding: 0 var(--s-md) var(--s-md);
+  }
+}
+
+.preview-bottom {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: var(--s-md) var(--s-xl);
+  padding-bottom: calc(var(--s-md) + var(--safe-b));
+  z-index: 210;
+}
+.preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-md);
+  background: rgba(30, 30, 35, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 6px var(--s-md);
+  border-radius: var(--r-full);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.preview-actions .btn-ghost {
+  color: rgba(255, 255, 255, 0.85);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.preview-actions .btn-ghost:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+.preview-actions .btn-ghost.danger {
+  color: rgba(255, 69, 58, 0.85);
+}
+.preview-actions .btn-ghost.danger:hover {
+  color: #ff453a;
+  background: rgba(255, 69, 58, 0.15);
+}
+.preview-actions .btn-ghost .mi {
+  font-size: 22px;
+}
+.preview-actions .btn-ghost .mi.fill {
+  color: #ffcc00;
+}
+
+/* Global Select dropdown style - Material 3 */
+.select {
+  height: var(--h-control, 40px);
+  padding: 0 36px 0 16px;
+  border-radius: var(--r-full, 9999px);
+  border: 1px solid var(--c-hairline-strong, #cac4d0);
+  background: var(--c-canvas, #fef7ff);
+  color: var(--c-ink, #1d1b20);
+  font-family: var(--font-sans, inherit);
+  font-size: var(--fs-body-sm, 14px);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2379747e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+.select:focus {
+  border-color: var(--c-accent, #6750a4);
+  outline: 2px solid var(--c-accent-ring);
+  outline-offset: 1px;
+}
+
+/* Custom Checkbox Input - Material 3 Style */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--c-hairline-strong, #cac4d0);
+  border-radius: 4px;
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  outline: none;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--c-accent, #6750a4);
+  background-color: rgba(103, 80, 164, 0.08);
+}
+
+:root[data-theme="dark"] input[type="checkbox"]:hover {
+  background-color: rgba(208, 188, 255, 0.08);
+}
+
+input[type="checkbox"]:checked {
+  border-color: var(--c-accent, #6750a4);
+  background-color: var(--c-accent, #6750a4);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--c-accent-ring);
+  outline-offset: 2px;
+}
+
+
+

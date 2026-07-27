@@ -72,10 +72,35 @@
   // Chiều cao control chuẩn.
   --h-control: 40px;
   --h-input: 44px;
+
+  // Vùng an toàn thiết bị có tai thỏ/thanh gesture (index.html đặt viewport-fit=cover).
+  // Trên máy không có khuyết, env() trả 0 nên các giá trị này thành 0 — an toàn.
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  // Cho trình duyệt biết đang ở theme sáng ⇒ thanh cuộn, ô input, select
+  // native tự vẽ đúng tông (không còn ô trắng lạc quẻ trên nền tối).
+  color-scheme: light;
+}
+
+// Thang chữ thu nhỏ trên màn hẹp — sửa MỘT chỗ, mọi trang cùng co lại.
+// Chỉ giảm cỡ tiêu đề (thứ dễ tràn dòng nhất); cỡ chữ thân giữ nguyên 16px
+// vì iOS Safari tự zoom khi focus input có font < 16px.
+@media (max-width: 640px) {
+  :root {
+    --fs-display-xl: 28px;
+    --fs-display-lg: 24px;
+    --fs-heading-lg: 20px;
+    --fs-heading-md: 18px;
+    --s-section: 48px;
+  }
 }
 
 // Dark theme: Material 3 Dark theme colors
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --c-primary: #d0bcff;
   --c-on-primary: #381e72;
   --c-ink: #e6e1e5;

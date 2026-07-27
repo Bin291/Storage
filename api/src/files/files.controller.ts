@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -59,6 +60,16 @@ export class FilesController {
     @Body() dto: MoveFileDto,
   ) {
     return this.files.move(userId, id, dto.folderId);
+  }
+
+  /** Sao chép tệp sang thư mục khác — tạo bản sao THẬT (mục 11.N). */
+  @Post(':id/copy')
+  copy(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: MoveFileDto,
+  ) {
+    return this.files.copy(userId, id, dto.folderId);
   }
 
   @Patch(':id/star')

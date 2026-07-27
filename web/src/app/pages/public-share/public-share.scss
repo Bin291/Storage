@@ -1,6 +1,7 @@
 /* Trang link công khai /s/:token (mục 12.F) — độc lập với Shell */
 .ps-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--c-surface, #0e0e11);
@@ -198,7 +199,10 @@
   display: flex;
   flex-direction: column;
   width: 100vw;
+  /* 100dvh: khung xem toàn màn hình phải khớp phần màn hình THẤY ĐƯỢC,
+     không thì thanh công cụ dưới bị thanh địa chỉ trình duyệt che. */
   height: 100vh;
+  height: 100dvh;
   background: transparent;
   border: none;
   border-radius: 0;

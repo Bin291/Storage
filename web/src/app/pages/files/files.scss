@@ -178,6 +178,43 @@
   gap: 2px;
 }
 
+/* Nút Dán (mục 11.N) — đứng cạnh breadcrumb, chỉ xuất hiện khi có gì để dán. */
+.paste-btn {
+  margin-left: auto;
+  max-width: min(320px, 60%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.paste-mode {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--c-accent-soft);
+  color: var(--c-accent-strong);
+}
+
+/* Toast góc dưới — dùng cho sao chép/cắt/dán (mục 11.N). */
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--s-xl) + var(--safe-b));
+  z-index: 600;
+  max-width: min(420px, calc(100vw - 2 * var(--s-md)));
+  padding: 10px 18px;
+  border-radius: var(--r-full);
+  background: var(--c-surface-dark);
+  color: var(--c-on-dark);
+  font-size: var(--fs-body-sm);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  animation: toast-in 0.16s ease-out;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 .content {
   flex: 1;
   overflow-y: auto;
@@ -206,8 +243,81 @@
 /* Grid — chỉ hình + tên, KHÔNG khung card (mục 11.H / tham chiếu Explorer) */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* min(180px, 100%) chặn trường hợp khung hẹp hơn 180px: khi đó cột co theo
+     khung thay vì giữ 180px cứng và tràn ra ngoài. */
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
   gap: var(--s-md) var(--s-sm);
+}
+
+/* Điện thoại + tablet: ô nhỏ lại, và mặc định BỎ tên tệp dưới ô — ảnh xem
+   trước đã đủ nhận ra tệp, còn tên 2 dòng làm ô cao gấp rưỡi và trang rối
+   (phản hồi UI). Bật lại được ở Cài đặt → `prefs.mobileTileNames`.
+   THƯ MỤC luôn giữ tên vì không có ảnh xem trước để nhận diện. */
+@media (max-width: 900px) {
+  .grid.hide-file-names .tile:not(.folder) .tile-title {
+    display: none;
+  }
+  /* Không có tên thì ô chỉ còn ảnh — bỏ luôn khoảng đệm dưới cho khít. */
+  .grid.hide-file-names .tile:not(.folder) {
+    padding-bottom: var(--s-xs);
+  }
+
+  .grid {
+    display: block;
+    column-width: 150px;
+    column-gap: var(--s-sm);
+  }
+  .tile {
+    display: inline-flex;
+    flex-direction: column;
+    width: 100%;
+    break-inside: avoid;
+    margin-bottom: var(--s-md);
+  }
+  .grid .tile-preview {
+    aspect-ratio: 1 / 1;
+    height: auto;
+  }
+  .grid .tile-preview img {
+    object-fit: cover;
+    border-radius: var(--r-sm);
+  }
+  /* Thư mục vẫn là icon nằm giữa ô vuông — không cắt gì cả. */
+  .grid .tile.folder .tile-preview {
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Bố cục Pinterest (Masonry) cho riêng ảnh và video */
+  .grid .tile.tile-media .tile-preview {
+    aspect-ratio: auto;
+    height: auto;
+  }
+  .grid .tile.tile-media .tile-preview img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+@media (max-width: 560px) {
+  .grid {
+    column-count: 3;
+    column-gap: var(--s-xs);
+  }
+  .tile {
+    margin-bottom: var(--s-sm);
+  }
+  .tile-glyph {
+    font-size: 48px;
+  }
+  /* Còn hiện tên thì gói gọn 1 dòng + "…" thay vì 2 dòng đẩy ô cao lên. */
+  .grid .tile-title {
+    -webkit-line-clamp: 1;
+    font-size: var(--fs-caption);
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
 }
 .tile {
   position: relative;
@@ -317,10 +427,7 @@
   cursor: pointer;
 }
 .tile-check input {
-  width: 16px;
-  height: 16px;
   cursor: pointer;
-  accent-color: var(--c-accent);
 }
 /* Ô chọn chỉ hiện khi mục ĐÃ được chọn (mục phản hồi UI) — bấm vào tile đã
    đủ để chọn+tô sáng (kiểu Explorer), nên không cần lộ ô trắng lúc hover
@@ -387,8 +494,97 @@
 }
 .list td {
   padding: var(--s-sm) var(--s-md);
-  border-bottom: 1px solid var(--c-hairline);
+  border-bottom: none;
   color: var(--c-charcoal);
+}
+
+/* Folders Grid layout (M3 suggested folders style) */
+.folders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s-md);
+  margin-bottom: var(--s-xl);
+}
+
+.tile.folder {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-md);
+  padding: var(--s-sm) var(--s-md);
+  border-radius: var(--r-md, 12px);
+  background: var(--c-surface-soft, #f7f2fa);
+  border: 1px solid var(--c-hairline);
+  height: 56px;
+  width: 100%;
+
+  .tile-preview {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+
+    .tile-glyph {
+      font-size: 24px;
+      color: var(--c-accent);
+      margin: 0;
+    }
+
+    .tile-overlay {
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      display: none;
+    }
+  }
+
+  .tile-title {
+    flex: 1;
+    text-align: left;
+    font-size: var(--fs-body-sm);
+    font-weight: 500;
+    color: var(--c-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
+    margin: 0;
+  }
+
+  .menu-btn {
+    opacity: 0;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-left: auto;
+    transition: opacity 0.15s ease;
+  }
+
+  &:hover {
+    .menu-btn {
+      opacity: 1;
+    }
+  }
+
+  &.selected {
+    border-color: var(--c-accent);
+    background: var(--c-accent-soft);
+  }
+}
+
+.tile.folder:hover, .tile.folder.selected {
+  .tile-preview .tile-glyph {
+    display: none;
+  }
+  .tile-preview .tile-overlay {
+    display: flex;
+    position: static;
+    transform: none;
+  }
 }
 .row {
   cursor: pointer;
@@ -413,10 +609,7 @@
   text-align: center;
 }
 .c-check input {
-  width: 15px;
-  height: 15px;
   cursor: pointer;
-  accent-color: var(--c-accent);
   vertical-align: middle;
 }
 .c-ico {
@@ -438,6 +631,10 @@
 .c-name {
   color: var(--c-ink);
   font-weight: 500;
+  /* Tên file dài (không có dấu cách, VD "bao_cao_tai_chinh_quy_4_2026_final.pdf")
+     trước đây nong cột ra làm cả bảng rộng hơn màn hình. anywhere cho phép
+     ngắt ở bất kỳ đâu khi cần, tên bình thường vẫn ngắt theo từ như cũ. */
+  overflow-wrap: anywhere;
 }
 .row.folder .c-name {
   cursor: pointer;
@@ -570,6 +767,18 @@
 @media (max-width: 720px) {
   .sidebar {
     display: none;
+  }
+  /* Vùng nội dung: bớt padding để lấy chỗ cho lưới/bảng, và chừa vùng an toàn. */
+  .content {
+    padding: var(--s-md);
+    padding-left: max(var(--s-md), var(--safe-l));
+    padding-right: max(var(--s-md), var(--safe-r));
+    padding-bottom: calc(var(--s-xl) + var(--safe-b));
+  }
+  /* Bảng ở màn hẹp: chữ nhỏ hơn + ô thưa vừa phải, tránh phải cuộn ngang. */
+  .list th,
+  .list td {
+    padding: var(--s-sm);
   }
 }
 
@@ -758,112 +967,7 @@
   background: var(--c-surface-soft);
 }
 
-/* Preview overlay — full-bleed kiểu Google Drive: nền mờ (backdrop blur),
-   thanh trên cùng + mũi tên lướt file, không phải dialog nhỏ giữa màn hình. */
-.preview-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: rgba(12, 12, 14, 0.6);
-  backdrop-filter: blur(20px) saturate(1.1);
-  -webkit-backdrop-filter: blur(20px) saturate(1.1);
-  display: flex;
-  flex-direction: column;
-}
-.preview-top {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-md);
-  padding: var(--s-lg) var(--s-xl);
-}
-.preview-title {
-  font-weight: 500;
-  color: #fff;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.preview-tools {
-  display: flex;
-  align-items: center;
-  gap: var(--s-sm);
-  flex-shrink: 0;
-}
-.preview-tools .btn-ghost {
-  color: #fff;
-}
-.preview-tools .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-.preview-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 96px var(--s-xxl);
-  overflow: hidden;
-}
-.preview-body > .state {
-  margin: auto;
-  color: #fff;
-}
-.preview-body iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: #fff;
-  border-radius: var(--r-md);
-}
-.preview-body app-docx-viewer,
-.preview-body app-sheet-viewer,
-.preview-body app-text-viewer {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
-
-/* Mũi tên lướt qua lại giữa các file (mục phản hồi UI — kiểu Google Drive) */
-.preview-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
-  border-radius: var(--r-full);
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-.preview-nav:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-.preview-nav.prev {
-  left: var(--s-xl);
-}
-.preview-nav.next {
-  right: var(--s-xl);
-}
-
-@media (max-width: 720px) {
-  .preview-body {
-    padding: 0 var(--s-md) var(--s-lg);
-  }
-  .preview-nav {
-    width: 38px;
-    height: 38px;
-  }
-  .preview-nav.prev { left: var(--s-sm); }
-  .preview-nav.next { right: var(--s-sm); }
-}
+/* Preview styles have been moved to global styles.scss */
 
 /* Panel chi tiết bên phải (tham chiếu hình 35-36) */
 .detail-panel {
@@ -1074,15 +1178,13 @@
 }
 
 /* Màn hẹp: panel thành drawer nổi bên phải */
+/* Điện thoại/tablet: BỎ HẲN panel chi tiết (phản hồi UI ảnh 7) — trước đây nó
+   là drawer trượt từ phải, chiếm gần hết màn hình để hiện lại đúng những thông
+   tin đã có ở dòng danh sách và trong khung xem trước. `files.ts` cũng chặn ở
+   tầng logic (không mở, không tốn request ký URL); rule này là lớp chặn thứ 2
+   phòng khi state cũ còn sót lại. */
 @media (max-width: 960px) {
   .detail-panel {
-    position: fixed;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 150;
-    width: min(340px, 90vw);
-    background: var(--c-surface-card);
-    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+    display: none;
   }
 }

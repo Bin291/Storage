@@ -71,6 +71,16 @@ export class FoldersController {
     return this.folders.move(userId, id, dto.parentId);
   }
 
+  /** Sao chép cả cây thư mục sang chỗ khác (mục 11.N). */
+  @Post(':id/copy')
+  copy(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: MoveFolderDto,
+  ) {
+    return this.folders.copy(userId, id, dto.parentId);
+  }
+
   @Patch(':id/star')
   star(
     @CurrentUser('id') userId: string,

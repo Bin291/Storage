@@ -16,11 +16,12 @@ import {
   Router,
 } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
+import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { RealtimeService } from '../core/realtime.service';
 import { NotificationService } from '../core/notification.service';
 import { InboxService } from '../core/inbox.service';
-import type { NotificationItem } from '../core/models';
+import type { FileItem, NotificationItem, SortField } from '../core/models';
 import { UploadService } from '../core/upload.service';
 import { StatsService } from '../core/stats.service';
 import { DropTargetService } from '../core/drop-target.service';
@@ -46,6 +47,7 @@ export class Shell implements OnInit, OnDestroy {
   readonly upload = inject(UploadService);
   private readonly stats = inject(StatsService);
   private readonly dropTarget = inject(DropTargetService);
+  private readonly api = inject(ApiService);
 
   readonly user = this.auth.user;
   readonly searchQuery = signal('');
@@ -54,6 +56,14 @@ export class Shell implements OnInit, OnDestroy {
   readonly inbox = inject(InboxService);
   readonly inboxOpen = signal(false);
   readonly categoryMenuOpen = signal(false);
+  /** Menu gộp lọc/sắp xếp/hiển thị — chỉ hiện ở khổ mobile (xem shell.scss). */
+  readonly toolsMenuOpen = signal(false);
+
+  readonly sortOptions: { value: SortField; label: string }[] = [
+    { value: 'name', label: 'Tên' },
+    { value: 'updatedAt', label: 'Ngày sửa đổi' },
+    { value: 'size', label: 'Dung lượng' },
+  ];
 
   readonly mobileSidebarOpen = signal(false);
 
@@ -95,10 +105,62 @@ export class Shell implements OnInit, OnDestroy {
     this.categoryMenuOpen.set(false);
   }
 
+  // --- Tìm kiếm 2 tầng (mục 11.M) ---
+  // Tầng 1 (rẻ): vừa gõ vừa lọc THEO TÊN qua `GET /files?q=` — chạy ngay, không
+  // đụng Gemini. Tầng 2 (đắt): nhấn Enter mới chạy AI ngữ nghĩa và mở /search.
+  // Giữ đúng quyết định mục 8.C "AI chỉ chạy khi Enter" để không đốt quota.
+  readonly nameHits = signal<FileItem[]>([]);
+  readonly suggestOpen = signal(false);
+  readonly suggestLoading = signal(false);
+  private suggestTimer?: ReturnType<typeof setTimeout>;
+
+  onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    const q = value.trim();
+    clearTimeout(this.suggestTimer);
+    if (q.length < 2) {
+      this.nameHits.set([]);
+      this.suggestOpen.set(false);
+      return;
+    }
+    this.suggestOpen.set(true);
+    this.suggestLoading.set(true);
+    // Debounce 250ms: gõ nhanh không bắn 1 request mỗi phím.
+    this.suggestTimer = setTimeout(() => {
+      this.api
+        .listFiles({ q, pageSize: 8, sort: 'updatedAt', order: 'desc' })
+        .subscribe({
+          next: (res) => {
+            // Bỏ qua kết quả về muộn của truy vấn cũ.
+            if (this.searchQuery().trim() !== q) return;
+            this.nameHits.set(res.files);
+            this.suggestLoading.set(false);
+          },
+          error: () => this.suggestLoading.set(false),
+        });
+    }, 250);
+  }
+
+  closeSuggest(): void {
+    this.suggestOpen.set(false);
+  }
+
+  /** Bấm 1 gợi ý theo tên: mở thẳng thư mục chứa tệp đó. */
+  openHit(file: FileItem): void {
+    this.closeSuggest();
+    this.searchQuery.set('');
+    void this.router.navigate(
+      file.folderId ? ['/folder', file.folderId] : ['/files'],
+      { queryParams: { focus: file.id } },
+    );
+  }
+
+  /** Enter = tầng 2: hỏi AI (ngữ nghĩa, có tốn quota). */
   triggerSearch(): void {
     const q = this.searchQuery().trim();
     if (!q) return;
-    this.router.navigate(['/search'], { queryParams: { q } });
+    this.closeSuggest();
+    void this.router.navigate(['/search'], { queryParams: { q } });
   }
 
   // --- Kéo-thả tải lên trong vùng nội dung (main.content) ---

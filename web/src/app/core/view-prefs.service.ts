@@ -12,6 +12,7 @@ export class ViewPrefsService {
   private readonly sortKey = 'storage-app.defaultSort';
   private readonly orderKey = 'storage-app.defaultOrder';
   private readonly notifyKey = 'storage-app.notifyDone';
+  private readonly mobileNamesKey = 'storage-app.mobileTileNames';
 
   readonly mode = signal<ViewMode>(
     (localStorage.getItem(this.modeKey) as ViewMode) || 'grid',
@@ -29,6 +30,16 @@ export class ViewPrefsService {
   readonly notifyOnDone = signal<boolean>(
     localStorage.getItem(this.notifyKey) !== 'false',
   );
+  /**
+   * Hiện tên TỆP dưới mỗi ô ở chế độ Lưới khi màn hình nhỏ (điện thoại/tablet).
+   * Mặc định **tắt**: ảnh xem trước đã đủ để nhận ra tệp, còn tên 2 dòng làm ô
+   * cao gấp rưỡi và trang trông rối (phản hồi UI). Tên **thư mục** không chịu
+   * ảnh hưởng của tuỳ chọn này — thư mục không có ảnh xem trước nên luôn cần tên.
+   * Chế độ Danh sách cũng không ảnh hưởng — luôn có cột tên.
+   */
+  readonly mobileTileNames = signal<boolean>(
+    localStorage.getItem(this.mobileNamesKey) === 'true',
+  );
 
   constructor() {
     effect(() => localStorage.setItem(this.modeKey, this.mode()));
@@ -37,6 +48,9 @@ export class ViewPrefsService {
     effect(() => localStorage.setItem(this.orderKey, this.defaultOrder()));
     effect(() =>
       localStorage.setItem(this.notifyKey, String(this.notifyOnDone())),
+    );
+    effect(() =>
+      localStorage.setItem(this.mobileNamesKey, String(this.mobileTileNames())),
     );
   }
 
