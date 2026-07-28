@@ -44,7 +44,16 @@
 
   <!-- Lăng kính THƯ MỤC -->
   <div class="section-label">Duyệt</div>
-  <a routerLink="/files" class="nav-item" [class.active]="browseActive()">
+  <!-- Cũng là đích thả (mục 11.O): kéo mục vào đây = chuyển về thư mục gốc -->
+  <a
+    routerLink="/files"
+    class="nav-item"
+    [class.active]="browseActive()"
+    [class.drop-over]="rootDropOver()"
+    (dragover)="onRootDragOver($event)"
+    (dragleave)="onRootDragLeave()"
+    (drop)="onRootDrop($event)"
+  >
     <span class="mi sm ico">cloud</span> My Storage
   </a>
   <a routerLink="/starred" routerLinkActive="active" class="nav-item">

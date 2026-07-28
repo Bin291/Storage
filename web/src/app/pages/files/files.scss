@@ -586,6 +586,24 @@
     transform: none;
   }
 }
+
+/* --- Kéo-thả di chuyển (mục 11.O) --- */
+/* Mục đang bị kéo mờ đi để mắt bám được "cái gì đang bay"; đích thả sáng viền
+   nét đứt — khác hẳn viền liền của trạng thái "đã chọn" nên không lẫn. */
+.tile.dragging,
+.row.dragging td {
+  opacity: 0.45;
+}
+.tile.drop-over {
+  background: var(--c-accent-soft);
+  border: 1.5px dashed var(--c-accent);
+}
+.crumb.drop-over {
+  background: var(--c-accent-soft);
+  outline: 1.5px dashed var(--c-accent);
+  color: var(--c-ink);
+}
+
 .row {
   cursor: pointer;
 }

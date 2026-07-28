@@ -20,6 +20,7 @@ import { StatsService } from '../../core/stats.service';
 import { ClipboardService, ClipEntry } from '../../core/clipboard.service';
 import { NavEventsService } from '../../core/nav-events.service';
 import { DropTargetService } from '../../core/drop-target.service';
+import { DragItem, ItemDragService } from '../../core/item-drag.service';
 import {
   BreadcrumbNode,
   FileItem,
@@ -90,6 +91,7 @@ export class Files {
   readonly clipboard = inject(ClipboardService);
   private readonly navEvents = inject(NavEventsService);
   private readonly dropTarget = inject(DropTargetService);
+  readonly itemDrag = inject(ItemDragService);
   private readonly destroyRef = inject(DestroyRef);
 
   // Route bindings (withComponentInputBinding).
@@ -413,6 +415,69 @@ export class Files {
     this.toastTimer = setTimeout(() => this.toast.set(null), 2600);
   }
 
+  // --- Kéo-thả để DI CHUYỂN (mục 11.O) ---
+  // Khác hoàn toàn với kéo-thả TẢI LÊN do Shell bắt ở tầng cửa sổ: ở đây nguồn
+  // kéo là mục đã có trong app, nhận diện bằng MIME riêng (ITEM_DRAG_MIME) nên
+  // hai luồng không giẫm chân nhau.
+
+  /** Đích đang được rê qua — 'root' = crumb "My Storage", còn lại là folder id. */
+  readonly dropOverKey = signal<string | null>(null);
+
+  /**
+   * Các mục sẽ bị kéo đi: nếu mục đang kéo nằm trong lựa chọn nhiều thì kéo cả
+   * lô (giống Explorer/Drive); nếu không thì chỉ kéo đúng mục đó và bỏ lựa chọn
+   * cũ đi cho khỏi hiểu nhầm.
+   */
+  onItemDragStart(
+    kind: ItemKind,
+    item: FileItem | FolderItem,
+    ev: DragEvent,
+  ): void {
+    let batch: DragItem[];
+    if (this.isSelected(kind, item.id)) {
+      batch = this.clipTargets();
+    } else {
+      this.clearSelection();
+      this.activeKey.set(this.keyFor(kind, item.id));
+      batch = [{ kind, id: item.id, name: item.name }];
+    }
+    this.itemDrag.start(ev, batch);
+  }
+
+  onItemDragEnd(): void {
+    this.itemDrag.end();
+    this.dropOverKey.set(null);
+  }
+
+  isDragging(kind: ItemKind, id: string): boolean {
+    return this.itemDrag.items().some((it) => it.kind === kind && it.id === id);
+  }
+
+  /**
+   * `dragover` phải `preventDefault()` thì trình duyệt mới cho phép thả — không
+   * gọi thì con trỏ luôn hiện dấu cấm dù handler `drop` có tồn tại.
+   */
+  onDropTargetOver(key: string, folderId: string | null, ev: DragEvent): void {
+    if (!this.itemDrag.isInternal(ev) || !this.itemDrag.canDropInto(folderId)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    if (this.dropOverKey() !== key) this.dropOverKey.set(key);
+  }
+
+  onDropTargetLeave(key: string): void {
+    if (this.dropOverKey() === key) this.dropOverKey.set(null);
+  }
+
+  onDropTargetDrop(folderId: string | null, ev: DragEvent): void {
+    this.dropOverKey.set(null);
+    this.itemDrag.drop(ev, folderId);
+  }
+
+  isDropOver(key: string): boolean {
+    return this.dropOverKey() === key;
+  }
+
   /** Tải xuống tất cả mục đang chọn — nén thành 1 zip bất đồng bộ (mục 11.J). */
   downloadSelected(): void {
     const fileIds: string[] = [];
@@ -549,6 +614,21 @@ export class Files {
       this.dropTarget.folderId.set(this.targetFolderId());
     });
     this.destroyRef.onDestroy(() => this.dropTarget.folderId.set(null));
+
+    // Kéo-thả di chuyển (mục 11.O): đích thả có thể nằm ở component khác
+    // (cây thư mục sidebar) nên kết quả về qua service chứ không qua callback.
+    this.itemDrag.moved.pipe(takeUntilDestroyed()).subscribe(({ items }) => {
+      this.clearSelection();
+      this.reload();
+      this.flash(
+        items.length === 1
+          ? `Đã chuyển “${items[0].name}”`
+          : `Đã chuyển ${items.length} mục`,
+      );
+    });
+    this.itemDrag.failed
+      .pipe(takeUntilDestroyed())
+      .subscribe((msg) => this.flash(msg));
 
     // Menu fixed: đóng khi cuộn để không "trôi" lệch khỏi nút.
     const onScroll = (): void => {

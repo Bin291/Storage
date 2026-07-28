@@ -1,6 +1,7 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
+import { ItemDragService } from '../core/item-drag.service';
 import { FolderItem } from '../core/models';
 
 /**
@@ -24,6 +25,10 @@ import { FolderItem } from '../core/models';
         class="label"
         [routerLink]="['/folder', folder().id]"
         [class.active]="activeId() === folder().id"
+        [class.drop-over]="dropOver()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)"
       >
         <span class="mi sm ico fill">folder</span>
         <span class="name">{{ folder().name }}</span>
@@ -61,6 +66,12 @@ import { FolderItem } from '../core/models';
     }
     .label:hover { background: var(--c-surface-soft); text-decoration: none; }
     .label.active { background: var(--c-surface-soft); color: var(--c-ink); font-weight: 500; }
+    /* Đích thả kéo-thả di chuyển (mục 11.O) — viền nét đứt, khác trạng thái active */
+    .label.drop-over {
+      background: var(--c-accent-soft);
+      outline: 1.5px dashed var(--c-accent);
+      color: var(--c-ink);
+    }
     .label .ico { color: var(--c-accent); flex-shrink: 0; }
     .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .children { margin-left: var(--s-lg); }
@@ -72,6 +83,7 @@ import { FolderItem } from '../core/models';
 })
 export class FolderTreeNode {
   private readonly api = inject(ApiService);
+  private readonly itemDrag = inject(ItemDragService);
 
   readonly folder = input.required<FolderItem>();
   readonly activeId = input<string | null>(null);
@@ -86,6 +98,41 @@ export class FolderTreeNode {
     if (this.expanded() && !this.loaded) {
       this.load();
     }
+  }
+
+  // --- Đích thả cho kéo-thả di chuyển (mục 11.O) ---
+  // Cây sidebar là đích thả tự nhiên nhất khi mục nguồn và thư mục đích không
+  // cùng nằm trong 1 màn hình (VD đang ở lăng kính "Gần đây").
+  readonly dropOver = signal(false);
+  private springTimer?: ReturnType<typeof setTimeout>;
+
+  onDragOver(ev: DragEvent): void {
+    if (!this.itemDrag.isInternal(ev) || !this.itemDrag.canDropInto(this.folder().id)) {
+      return;
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    if (!this.dropOver()) this.dropOver.set(true);
+    // "Spring-loaded": rê giữ 700ms thì tự mở nhánh con, để thả được vào thư
+    // mục sâu mà không phải bấm mở trước rồi kéo lại từ đầu.
+    if (!this.expanded() && !this.springTimer) {
+      this.springTimer = setTimeout(() => {
+        this.springTimer = undefined;
+        if (this.dropOver() && !this.expanded()) this.toggle();
+      }, 700);
+    }
+  }
+
+  onDragLeave(): void {
+    this.dropOver.set(false);
+    clearTimeout(this.springTimer);
+    this.springTimer = undefined;
+  }
+
+  onDrop(ev: DragEvent): void {
+    this.onDragLeave();
+    this.itemDrag.drop(ev, this.folder().id);
   }
 
   private load(): void {

@@ -8,6 +8,7 @@ import { StatsService } from '../core/stats.service';
 import { NavEventsService } from '../core/nav-events.service';
 import { UploadService } from '../core/upload.service';
 import { DropTargetService } from '../core/drop-target.service';
+import { ItemDragService } from '../core/item-drag.service';
 import { AuthService } from '../core/auth.service';
 import { FolderItem } from '../core/models';
 import { GroupId, groupById } from '../core/file-groups';
@@ -42,6 +43,25 @@ export class NavSidebar {
     if (this.shell) {
       this.shell.closeMobileSidebar();
     }
+  }
+
+  // --- "My Storage" là đích thả về thư mục gốc (mục 11.O) ---
+  private readonly itemDrag = inject(ItemDragService);
+  readonly rootDropOver = signal(false);
+
+  onRootDragOver(ev: DragEvent): void {
+    if (!this.itemDrag.isInternal(ev) || !this.itemDrag.canDropInto(null)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+    if (!this.rootDropOver()) this.rootDropOver.set(true);
+  }
+  onRootDragLeave(): void {
+    this.rootDropOver.set(false);
+  }
+  onRootDrop(ev: DragEvent): void {
+    this.rootDropOver.set(false);
+    this.itemDrag.drop(ev, null);
   }
 
   readonly rootFolders = signal<FolderItem[]>([]);

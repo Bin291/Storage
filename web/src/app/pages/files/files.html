@@ -5,13 +5,29 @@
     <div class="toolbar">
       <div class="crumbs">
         @if (lens() === 'folder') {
-          <a routerLink="/files" class="crumb">My Storage</a>
+          <!-- Crumb cũng là đích thả: kéo mục lên đây = chuyển ngược lên cấp
+               trên, thao tác hay dùng nhất mà lưới không có chỗ để thả. -->
+          <a
+            routerLink="/files"
+            class="crumb"
+            [class.drop-over]="isDropOver('root')"
+            (dragover)="onDropTargetOver('root', null, $event)"
+            (dragleave)="onDropTargetLeave('root')"
+            (drop)="onDropTargetDrop(null, $event)"
+          >My Storage</a>
           @for (node of breadcrumb(); track node.id; let last = $last) {
             <span class="sep">/</span>
             @if (last) {
               <span class="crumb current">{{ node.name }}</span>
             } @else {
-              <a [routerLink]="['/folder', node.id]" class="crumb">{{ node.name }}</a>
+              <a
+                [routerLink]="['/folder', node.id]"
+                class="crumb"
+                [class.drop-over]="isDropOver(node.id)"
+                (dragover)="onDropTargetOver(node.id, node.id, $event)"
+                (dragleave)="onDropTargetLeave(node.id)"
+                (drop)="onDropTargetDrop(node.id, $event)"
+              >{{ node.name }}</a>
             }
           }
         } @else {
@@ -86,6 +102,14 @@
                 <div
                   class="tile folder"
                   [class.selected]="isSelected('folder', f.id) || isActive('folder', f.id)"
+                  [class.dragging]="isDragging('folder', f.id)"
+                  [class.drop-over]="isDropOver(f.id)"
+                  draggable="true"
+                  (dragstart)="onItemDragStart('folder', f, $event)"
+                  (dragend)="onItemDragEnd()"
+                  (dragover)="onDropTargetOver(f.id, f.id, $event)"
+                  (dragleave)="onDropTargetLeave(f.id)"
+                  (drop)="onDropTargetDrop(f.id, $event)"
                   (click)="onItemClick('folder', f, $event)"
                   (dblclick)="openFolder(f.id)"
                   (contextmenu)="onContextMenu('folder', f, $event)"
@@ -129,6 +153,10 @@
                     class="tile"
                     [class.tile-media]="file.mimeType && (file.mimeType.startsWith('image/') || file.mimeType.startsWith('video/'))"
                     [class.selected]="detail()?.id === file.id || isSelected('file', file.id) || isActive('file', file.id)"
+                    [class.dragging]="isDragging('file', file.id)"
+                    draggable="true"
+                    (dragstart)="onItemDragStart('file', file, $event)"
+                    (dragend)="onItemDragEnd()"
                     (click)="onItemClick('file', file, $event)"
                     (dblclick)="openPreview(file)"
                     (contextmenu)="onContextMenu('file', file, $event)"
@@ -181,6 +209,10 @@
                     <tr
                       class="row"
                       [class.selected]="detail()?.id === file.id || isSelected('file', file.id) || isActive('file', file.id)"
+                      [class.dragging]="isDragging('file', file.id)"
+                      draggable="true"
+                      (dragstart)="onItemDragStart('file', file, $event)"
+                      (dragend)="onItemDragEnd()"
                       (click)="onItemClick('file', file, $event)"
                       (dblclick)="openPreview(file)"
                       (contextmenu)="onContextMenu('file', file, $event)"

@@ -97,6 +97,12 @@
   background: var(--c-accent-soft);
   color: var(--c-accent-strong);
 }
+/* Đích thả của kéo-thả di chuyển (mục 11.O) */
+.nav-item.drop-over {
+  background: var(--c-accent-soft);
+  outline: 1.5px dashed var(--c-accent);
+  color: var(--c-ink);
+}
 .nav-item .ico {
   color: var(--c-accent);
   flex-shrink: 0;
