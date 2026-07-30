@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { File } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 import { StorageService, CompletedPart } from '../storage/storage.service';
 import { FilesService } from '../files/files.service';
 import {

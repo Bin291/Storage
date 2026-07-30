@@ -14,7 +14,7 @@ import {
   scryptSync,
   timingSafeEqual,
 } from 'node:crypto';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 
 /** Kết quả kiểm quyền đọc — `share = null` nghĩa là chính chủ (mục 12.I). */
 export interface GrantedAccess {

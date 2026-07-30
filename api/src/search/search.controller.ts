@@ -2,7 +2,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UserThrottlerGuard } from '../common/user-throttler.guard';
+import { UserThrottlerGuard } from '../infra/common/user-throttler.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SearchService } from './search.service';
 

@@ -9,9 +9,9 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UserThrottlerGuard } from '../common/user-throttler.guard';
+import { UserThrottlerGuard } from '../infra/common/user-throttler.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 import { AiPipelineJob, QUEUE, ThumbnailJob } from '../jobs/queue.constants';
 import { ThumbnailService } from './thumbnail.service';
 

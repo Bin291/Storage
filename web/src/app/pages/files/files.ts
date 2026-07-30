@@ -10,8 +10,16 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Observable, forkJoin, timeout } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { Observable, forkJoin } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { filesActions } from '../../store/files/files.actions';
+import {
+  selectFiles,
+  selectFilesError,
+  selectFilesLoading,
+  selectFilesTotal,
+} from '../../store/files/files.selectors';
 import { UploadService } from '../../core/upload.service';
 import { RealtimeService } from '../../core/realtime.service';
 import { ViewPrefsService } from '../../core/view-prefs.service';
@@ -82,6 +90,7 @@ type Lens = 'folder' | 'starred' | 'recent' | 'type';
 })
 export class Files {
   private readonly api = inject(ApiService);
+  private readonly store = inject(Store);
   private readonly router = inject(Router);
   readonly prefs = inject(ViewPrefsService);
   readonly upload = inject(UploadService);
@@ -115,12 +124,12 @@ export class Files {
   /** Chỉ lăng kính Thư mục mới cho tạo/tải lên + hiện subfolder. */
   readonly isBrowse = computed(() => this.lens() === 'folder');
 
-  readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly loading = this.store.selectSignal(selectFilesLoading);
+  readonly error = this.store.selectSignal(selectFilesError);
   readonly subfolders = signal<FolderItem[]>([]);
-  readonly files = signal<FileItem[]>([]);
+  readonly files = this.store.selectSignal(selectFiles);
   readonly breadcrumb = signal<BreadcrumbNode[]>([]);
-  readonly total = signal(0);
+  readonly total = this.store.selectSignal(selectFilesTotal);
 
   readonly sort = computed(() => this.toolbar.sort());
   readonly order = computed(() => this.toolbar.order());
@@ -519,7 +528,7 @@ export class Files {
           const [kind, id] = key.split(':') as [ItemKind, string];
           (kind === 'file' ? fileIds : folderIds).add(id);
         }
-        this.files.update((l) => l.filter((f) => !fileIds.has(f.id)));
+        this.store.dispatch(filesActions.filesRemoved({ ids: [...fileIds] }));
         this.subfolders.update((l) => l.filter((f) => !folderIds.has(f.id)));
         this.clearSelection();
         this.stats.refreshSoon();
@@ -679,25 +688,15 @@ export class Files {
     this.realtime.fileChanged
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((change) => {
-        const patch = (f: FileItem): FileItem => ({
-          ...f,
-          status: change.status ?? f.status,
-          thumbnailUrl:
-            change.thumbnailUrl !== undefined
-              ? change.thumbnailUrl
-              : f.thumbnailUrl,
-          errorMessage:
-            change.errorMessage !== undefined
-              ? change.errorMessage
-              : f.errorMessage,
-        });
-        this.files.update((list) =>
-          list.map((f) => (f.id === change.id ? patch(f) : f)),
-        );
+        const patch: Partial<FileItem> = {};
+        if (change.status != null) patch.status = change.status;
+        if (change.thumbnailUrl !== undefined) patch.thumbnailUrl = change.thumbnailUrl;
+        if (change.errorMessage !== undefined) patch.errorMessage = change.errorMessage;
+        this.store.dispatch(filesActions.filePatched({ id: change.id, patch }));
         // Panel chi tiết đang mở file này -> cập nhật + nạp preview khi vừa 'ready'.
         const cur = this.detail();
         if (cur && cur.id === change.id) {
-          const updated = patch(cur);
+          const updated = { ...cur, ...patch };
           this.detail.set(updated);
           if (
             updated.status === 'ready' &&
@@ -712,10 +711,11 @@ export class Files {
 
   retryFile(file: FileItem): void {
     this.api.retryFile(file.id).subscribe(() => {
-      this.files.update((l) =>
-        l.map((f) =>
-          f.id === file.id ? { ...f, status: 'processing', errorMessage: null } : f,
-        ),
+      this.store.dispatch(
+        filesActions.filePatched({
+          id: file.id,
+          patch: { status: 'processing', errorMessage: null },
+        }),
       );
     });
   }
@@ -773,11 +773,9 @@ export class Files {
     // Đổi view -> xoá nội dung cũ + hiện spinner. Cùng view (đổi sort, upload
     // xong) -> giữ nội dung, làm mới ngầm, KHÔNG chớp spinner.
     if (viewChanged) {
-      this.files.set([]);
+      this.store.dispatch(filesActions.clearFiles());
       this.subfolders.set([]);
-      this.loading.set(true);
     }
-    this.error.set(null);
 
     // Breadcrumb + subfolders chỉ có ở lăng kính Thư mục (mục 11.H).
     if (lens === 'folder') {
@@ -794,39 +792,29 @@ export class Files {
 
     // Nhóm "Khác" chưa có đuôi nào (stats chưa tới) -> chờ, không truy vấn.
     if (lens === 'type' && exts && exts.length === 0) {
-      this.files.set([]);
-      this.total.set(0);
-      this.loading.set(false);
+      this.store.dispatch(
+        filesActions.loadFilesSuccess({ result: { files: [], total: 0, page: 1, pageSize: 100 } }),
+      );
       return;
     }
 
-    // Files — timeout 15s để không kẹt "Đang tải…" vô hạn khi backend chưa chạy.
-    this.api
-      .listFiles({
-        folderId: lens === 'folder' ? fid : null,
-        starred: lens === 'starred',
-        recent: lens === 'recent',
-        extensions: lens === 'type' ? exts : null,
-        category: lens === 'folder' ? this.category() : null,
-        sort: this.sort(),
-        order: this.order(),
-        page: 1,
-        pageSize: 100,
-      })
-      .pipe(timeout(15000))
-      .subscribe({
-        next: (res) => {
-          this.files.set(res.files);
-          this.total.set(res.total);
-          this.loading.set(false);
+    // Files — effect FilesEffects.loadFiles$ gọi API (timeout 15s để không kẹt
+    // "Đang tải…" vô hạn khi backend chưa chạy).
+    this.store.dispatch(
+      filesActions.loadFiles({
+        params: {
+          folderId: lens === 'folder' ? fid : null,
+          starred: lens === 'starred',
+          recent: lens === 'recent',
+          extensions: lens === 'type' ? exts : null,
+          category: lens === 'folder' ? this.category() : null,
+          sort: this.sort(),
+          order: this.order(),
+          page: 1,
+          pageSize: 100,
         },
-        error: () => {
-          this.loading.set(false);
-          this.error.set(
-            'Không tải được danh sách. Kiểm tra backend đã chạy chưa (cd apps → npm run api), rồi Thử lại.',
-          );
-        },
-      });
+      }),
+    );
   }
 
   /** Nút "Thử lại" khi lỗi tải — ép coi như view mới để hiện spinner + tải lại. */
@@ -893,9 +881,7 @@ export class Files {
         : this.api.starFolder(item.id, next);
     req.subscribe(() => {
       if (kind === 'file') {
-        this.files.update((list) =>
-          list.map((f) => (f.id === item.id ? { ...f, isStarred: next } : f)),
-        );
+        this.store.dispatch(filesActions.filePatched({ id: item.id, patch: { isStarred: next } }));
         // Đồng bộ panel chi tiết đang mở cùng file.
         const cur = this.detail();
         if (cur && cur.id === item.id) {
@@ -936,7 +922,7 @@ export class Files {
         this.closeModal();
         // Ẩn ngay khỏi UI (đã set deletedAt ở backend).
         if (sel.kind === 'file') {
-          this.files.update((l) => l.filter((f) => f.id !== sel.id));
+          this.store.dispatch(filesActions.filesRemoved({ ids: [sel.id] }));
         } else {
           this.subfolders.update((l) => l.filter((f) => f.id !== sel.id));
           this.foldersChanged();

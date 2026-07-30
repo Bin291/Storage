@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Notification } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 
 /**
  * Thông báo trong app (mục 12.J). Bảng thật (không chỉ Realtime) vì chia sẻ

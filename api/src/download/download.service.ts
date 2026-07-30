@@ -2,9 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import type { Readable } from 'node:stream';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import { CacheService } from '../cache/cache.service';
+import { CacheService } from '../infra/cache/cache.service';
 import { QUEUE, ZipJob } from '../jobs/queue.constants';
 
 export interface ZipStatus {

@@ -85,16 +85,21 @@ export class DocxViewer {
     }
   }
 
-  /** Phóng trang theo bề ngang khung xem (tối đa 1.5x để chữ không bị mờ vỡ nét
-   *  lúc phóng quá to), không bao giờ thu nhỏ hơn 1x — mobile giữ nguyên hành vi
-   *  cuộn ngang cũ (mục "Trang Word có bề ngang cố định" ở docx-viewer.scss). */
+  /** Phóng trang theo bề ngang khung xem NHƯNG không bao giờ phóng quá mức khiến
+   *  trang đầu (chiều cao) tràn khỏi khung xem — nếu không người dùng phải cuộn
+   *  dọc mới thấy hết trang 1, phản tác dụng của "phóng cho dễ đọc". Tối đa 1.5x
+   *  để chữ không bị mờ vỡ nét lúc phóng quá to, không bao giờ thu nhỏ hơn 1x —
+   *  mobile giữ nguyên hành vi cuộn ngang cũ (mục "Trang Word có bề ngang cố
+   *  định" ở docx-viewer.scss). */
   private applyFitScale(): void {
     const wrap = this.container().nativeElement.querySelector<HTMLElement>(
       '.docx-render-wrapper',
     );
     if (!wrap) return;
-    const availableWidth = this.scroll().nativeElement.clientWidth;
-    if (!availableWidth) return;
+    const scrollEl = this.scroll().nativeElement;
+    const availableWidth = scrollEl.clientWidth;
+    const availableHeight = scrollEl.clientHeight;
+    if (!availableWidth || !availableHeight) return;
 
     wrap.style.transform = '';
     // wrap tự căng full bề ngang khung xem (flex-column + align-items:center của
@@ -105,16 +110,26 @@ export class DocxViewer {
     const wrapPaddingX =
       parseFloat(getComputedStyle(wrap).paddingLeft || '0') +
       parseFloat(getComputedStyle(wrap).paddingRight || '0');
+    const wrapPaddingY =
+      parseFloat(getComputedStyle(wrap).paddingTop || '0') +
+      parseFloat(getComputedStyle(wrap).paddingBottom || '0');
     const naturalWidth = page.offsetWidth + wrapPaddingX;
-    const naturalHeight = wrap.scrollHeight;
-    if (!naturalWidth || !naturalHeight) return;
+    // Chỉ tính theo chiều cao TRANG ĐẦU (không phải scrollHeight toàn bộ tài
+    // liệu) — văn bản nhiều trang không nên bị ép nhỏ lại chỉ để tất cả các
+    // trang chung nhau vừa 1 khung xem.
+    const firstPageHeight = page.offsetHeight + wrapPaddingY;
+    const totalHeight = wrap.scrollHeight;
+    if (!naturalWidth || !firstPageHeight || !totalHeight) return;
 
-    const scale = Math.min(1.5, Math.max(1, availableWidth / naturalWidth));
+    const scale = Math.min(
+      1.5,
+      Math.max(1, Math.min(availableWidth / naturalWidth, availableHeight / firstPageHeight)),
+    );
     wrap.style.transformOrigin = 'top center';
     wrap.style.transform = scale > 1 ? `scale(${scale})` : '';
     // transform không đẩy layout -> tự bù chiều cao để khung cuộn tính đúng,
     // không thì phần bị phóng to tràn ra ngoài / để lại khoảng trắng thừa.
     this.container().nativeElement.style.height =
-      scale > 1 ? `${naturalHeight * scale}px` : '';
+      scale > 1 ? `${totalHeight * scale}px` : '';
   }
 }

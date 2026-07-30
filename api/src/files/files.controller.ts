@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UserThrottlerGuard } from '../common/user-throttler.guard';
+import { UserThrottlerGuard } from '../infra/common/user-throttler.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FilesService } from './files.service';
 import { ListFilesQuery, MoveFileDto, RenameFileDto, StarDto } from './dto';

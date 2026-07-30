@@ -1,7 +1,7 @@
 import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UserThrottlerGuard } from '../common/user-throttler.guard';
+import { UserThrottlerGuard } from '../infra/common/user-throttler.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { TrashService } from './trash.service';
 

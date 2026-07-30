@@ -16,10 +16,10 @@ const createArchive = require('archiver') as (
   format: string,
   options?: { zlib?: { level?: number } },
 ) => ArchiverInstance;
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import { CacheService } from '../cache/cache.service';
-import { resolveNameConflict } from '../common/name-conflict';
+import { CacheService } from '../infra/cache/cache.service';
+import { resolveNameConflict } from '../infra/common/name-conflict';
 import { QUEUE, ZipJob } from '../jobs/queue.constants';
 import { ZipStatus } from './download.service';
 

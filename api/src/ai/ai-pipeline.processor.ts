@@ -2,7 +2,7 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { randomUUID } from 'node:crypto';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { AiPipelineJob, QUEUE } from '../jobs/queue.constants';
 import { DocumentParserService } from './document-parser.service';

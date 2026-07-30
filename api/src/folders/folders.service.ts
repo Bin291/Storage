@@ -6,10 +6,10 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Folder } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '../infra/prisma/prisma.service';
+import { CacheService } from '../infra/cache/cache.service';
 import { StorageService } from '../storage/storage.service';
-import { resolveNameConflict } from '../common/name-conflict';
+import { resolveNameConflict } from '../infra/common/name-conflict';
 import { CleanupJob, QUEUE } from '../jobs/queue.constants';
 import { FilesService } from '../files/files.service';
 

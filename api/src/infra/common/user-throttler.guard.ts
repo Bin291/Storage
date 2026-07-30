@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import type { AuthUser } from '../auth/jwt.strategy';
+import type { AuthUser } from '../../auth/jwt.strategy';
 
 /**
  * Rate limit khoá theo user id (mục 5.D), không theo IP — app bắt buộc đăng nhập.

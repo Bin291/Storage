@@ -3,7 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import sharp from 'sharp';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { UserThrottlerGuard } from '../common/user-throttler.guard';
+import { UserThrottlerGuard } from '../infra/common/user-throttler.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthUser } from './jwt.strategy';
 import { StorageService } from '../storage/storage.service';

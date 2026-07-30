@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Store } from '@ngrx/store';
 import { filter, map, startWith } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { StatsService } from '../core/stats.service';
@@ -10,8 +11,9 @@ import { UploadService } from '../core/upload.service';
 import { DropTargetService } from '../core/drop-target.service';
 import { ItemDragService } from '../core/item-drag.service';
 import { AuthService } from '../core/auth.service';
-import { FolderItem } from '../core/models';
 import { GroupId, groupById } from '../core/file-groups';
+import { foldersActions } from '../store/folders/folders.actions';
+import { selectFolderChildren } from '../store/folders/folders.selectors';
 import { FolderTreeNode } from './folder-tree-node';
 import { Modal } from '../shared/modal';
 import { Avatar } from '../shared/avatar';
@@ -31,6 +33,7 @@ import { Shell } from './shell';
 export class NavSidebar {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly store = inject(Store);
   private readonly upload = inject(UploadService);
   private readonly auth = inject(AuthService);
   readonly user = this.auth.user;
@@ -64,7 +67,7 @@ export class NavSidebar {
     this.itemDrag.drop(ev, null);
   }
 
-  readonly rootFolders = signal<FolderItem[]>([]);
+  readonly rootFolders = this.store.selectSignal(selectFolderChildren(null));
   /** Nhóm đang bung dropdown (mục 11.H). */
   readonly expanded = signal<Set<GroupId>>(new Set());
 
@@ -129,13 +132,9 @@ export class NavSidebar {
     // Cây thư mục nạp lần đầu + tự nạp lại khi có nơi khác báo folder đổi.
     effect(() => {
       this.navEvents.foldersChanged();
-      this.loadRootFolders();
+      this.store.dispatch(foldersActions.loadChildren({ parentId: null }));
     });
     this.stats.refresh();
-  }
-
-  private loadRootFolders(): void {
-    this.api.folderChildren(null).subscribe((f) => this.rootFolders.set(f));
   }
 
   toggleGroup(id: GroupId, ev: Event): void {
