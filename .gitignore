@@ -2,6 +2,7 @@
 /*
 !/.gitignore
 !/.gitattributes
+!/render.yaml
 !/web
 !/api
 !/Makefile

@@ -1,0 +1,84 @@
+services:
+  - type: web
+    name: storage-app-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: api
+    buildCommand: npm install && npx prisma generate && npm run build && npx prisma migrate deploy
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: NODE_ENV
+        value: production
+
+      # --- Redis (BullMQ + cache) ---
+      # Render Key Value KHÔNG có gói free (bắt buộc payment method) — tài khoản
+      # đang dùng Free plan nên dùng Redis managed ngoài (Upstash) thay thế.
+      # Dán "UPSTASH_REDIS_URL" (dạng rediss://...) vào đây sau khi tạo database
+      # trên upstash.com — configuration.ts tự parse host/port/password/tls từ URL.
+      - key: REDIS_URL
+        sync: false
+
+      # --- CORS / link chia sẻ — điền domain thật của web đã deploy ---
+      - key: WEB_ORIGIN
+        sync: false
+      - key: WEB_DEV
+        sync: false
+      - key: SHARE_BASE_URL
+        sync: false
+
+      # --- Supabase (Postgres + Auth) ---
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # --- Google Cloud Storage (XML API tương thích S3) ---
+      - key: GCS_PROJECT_ID
+        sync: false
+      - key: GCS_BUCKET
+        sync: false
+      - key: GCS_REGION
+        value: asia
+      - key: GCS_ENDPOINT
+        value: https://storage.googleapis.com
+      - key: GCS_ACCESS_KEY_ID
+        sync: false
+      - key: GCS_SECRET_ACCESS_KEY
+        sync: false
+      - key: GCS_PUBLIC_BASE_URL
+        sync: false
+
+      # --- Google Gemini (embedding + OCR) ---
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_EMBED_MODEL
+        value: gemini-embedding-001
+      - key: GEMINI_OCR_MODEL
+        value: gemini-3.6-flash
+
+      # --- Giới hạn ---
+      - key: MAX_FILE_SIZE_MB
+        value: 2048
+      - key: UPLOAD_CHUNK_SIZE_MB
+        value: 8
+
+      # --- Thùng rác ---
+      - key: TRASH_RETENTION_DAYS
+        value: 30
+
+      # --- Chia sẻ ---
+      - key: SHARE_SESSION_SECRET
+        generateValue: true
+      - key: SHARE_CONTENT_TTL_SECONDS
+        value: 600
