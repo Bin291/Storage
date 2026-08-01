@@ -9,8 +9,15 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
-// Bộ 3 video nền cho cột phải (public/assets — Angular phục vụ nguyên trạng ở /assets).
-const BACKGROUND_VIDEOS = ['/assets/1.mp4', '/assets/2.mp4', '/assets/3.mp4'];
+// Bộ 3 video nền cho cột phải. File nặng (37-107MB) vượt giới hạn 25 MiB/file
+// của Cloudflare static assets nên host trên Cloudflare R2 (bucket storage-app-assets),
+// không bundle cùng web build nữa.
+const ASSETS_BASE_URL = 'https://pub-03f605ba23914bf0ac49b7a80b283b18.r2.dev';
+const BACKGROUND_VIDEOS = [
+  `${ASSETS_BASE_URL}/1.mp4`,
+  `${ASSETS_BASE_URL}/2.mp4`,
+  `${ASSETS_BASE_URL}/3.mp4`,
+];
 /** Mỗi clip lặp lại 2 lần rồi mới chuyển sang video kế tiếp. */
 const REPLAYS_PER_VIDEO = 2;
 /** Phải khớp với thời gian transition opacity ở login.scss (.bg-video). */
