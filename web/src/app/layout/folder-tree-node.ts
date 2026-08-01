@@ -1,8 +1,8 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../core/api.service';
-import { ItemDragService } from '../core/item-drag.service';
-import { FolderItem } from '../core/models';
+import { ApiService } from '../core/api/api.service';
+import { ItemDragService } from '../core/drag-drop/item-drag.service';
+import { FolderItem } from '../core/folders/folder.model';
 
 /**
  * Node cây thư mục — lazy load con khi expand (mục 11.C), không load hết cây.
@@ -23,7 +23,7 @@ import { FolderItem } from '../core/models';
       </button>
       <a
         class="label"
-        [routerLink]="['/folder', folder().id]"
+        [routerLink]="['/app/folder', folder().id]"
         [class.active]="activeId() === folder().id"
         [class.drop-over]="dropOver()"
         (dragover)="onDragOver($event)"

@@ -1,10 +1,10 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth.service';
-import { ApiService } from '../../core/api.service';
-import { AvatarService } from '../../core/avatar.service';
-import { formatSize } from '../../core/file-utils';
+import { AuthService } from '../../core/auth/auth.service';
+import { ApiService } from '../../core/api/api.service';
+import { AvatarService } from '../../core/ui/avatar.service';
+import { formatSize } from '../../core/files/file-utils';
 import { Avatar } from '../../shared/avatar';
 import { AvatarCropper } from '../../shared/avatar-cropper';
 

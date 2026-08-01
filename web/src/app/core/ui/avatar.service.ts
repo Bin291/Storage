@@ -1,8 +1,8 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import imageCompression from 'browser-image-compression';
-import { ApiService } from './api.service';
-import { AuthService } from './auth.service';
+import { ApiService } from '../api/api.service';
+import { AuthService } from '../auth/auth.service';
 
 /**
  * Avatar cá nhân hoá (mục 11.E) — để nhận biết người dùng khi chia sẻ màn

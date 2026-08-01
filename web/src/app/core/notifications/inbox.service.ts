@@ -1,8 +1,8 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
-import { AuthService } from './auth.service';
-import { RealtimeService } from './realtime.service';
-import { NotificationItem } from './models';
+import { ApiService } from '../api/api.service';
+import { AuthService } from '../auth/auth.service';
+import { RealtimeService } from '../realtime/realtime.service';
+import { NotificationItem } from './notification.model';
 
 /**
  * Hộp thông báo trong app (mục 12.J).

@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { SupabaseClientService } from './supabase.client';
-import { AuthService } from './auth.service';
-import { FileItem, NotificationItem } from './models';
+import { SupabaseClientService } from '../supabase/supabase.client';
+import { AuthService } from '../auth/auth.service';
+import { FileItem } from '../files/file.model';
+import { NotificationItem } from '../notifications/notification.model';
 
 /**
  * Nghe thay đổi qua Supabase Realtime:

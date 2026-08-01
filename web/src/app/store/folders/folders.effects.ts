@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, mergeMap, of } from 'rxjs';
-import { ApiService } from '../../core/api.service';
+import { ApiService } from '../../core/api/api.service';
 import { foldersActions } from './folders.actions';
 
 @Injectable()

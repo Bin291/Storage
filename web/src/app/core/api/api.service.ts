@@ -1,23 +1,21 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { FileSource } from './file-source';
+import { environment } from '../../../environments/environment';
+import { FileSource } from '../files/file-source';
+import { BreadcrumbNode } from '../models/common.model';
+import { FileItem, FileListResult, ListParams } from '../files/file.model';
+import { TrashItem } from '../files/trash.model';
+import { FileStat } from '../stats/stats.model';
+import { FolderItem } from '../folders/folder.model';
+import { NotificationItem } from '../notifications/notification.model';
+import { SearchResultItem } from '../search/search.model';
 import {
-  BreadcrumbNode,
-  FileItem,
-  FileListResult,
-  FileStat,
-  FolderItem,
-  ListParams,
-  NotificationItem,
   PublicShareMeta,
-  SearchResultItem,
   SharedBrowseResult,
   SharedWithMeItem,
   ShareView,
-  TrashItem,
-} from './models';
+} from '../share/share.model';
 
 /** Client REST tới API NestJS (token gắn tự động bởi authInterceptor). */
 @Injectable({ providedIn: 'root' })

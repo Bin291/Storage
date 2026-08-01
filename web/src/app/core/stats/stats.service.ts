@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { ApiService } from './api.service';
-import { FileStat } from './models';
-import { FILE_GROUPS, FileGroupDef, groupForExtension } from './file-groups';
+import { ApiService } from '../api/api.service';
+import { FileStat } from './stats.model';
+import { FILE_GROUPS, FileGroupDef, groupForExtension } from '../files/file-groups';
 
 export interface ExtCount {
   extension: string;

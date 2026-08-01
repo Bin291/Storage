@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { RealtimeService } from './realtime.service';
-import { ViewPrefsService } from './view-prefs.service';
+import { RealtimeService } from '../realtime/realtime.service';
+import { ViewPrefsService } from '../ui/view-prefs.service';
 
 /**
  * Thông báo trình duyệt (mục 11.F — Phương án 1): tái dùng Realtime sẵn có,

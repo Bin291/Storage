@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { SortField, SortOrder } from './models';
+import { SortField, SortOrder } from '../files/file.model';
 
 @Injectable({ providedIn: 'root' })
 export class ToolbarService {

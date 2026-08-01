@@ -4,14 +4,14 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { FormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { filter, map, startWith } from 'rxjs';
-import { ApiService } from '../core/api.service';
-import { StatsService } from '../core/stats.service';
-import { NavEventsService } from '../core/nav-events.service';
-import { UploadService } from '../core/upload.service';
-import { DropTargetService } from '../core/drop-target.service';
-import { ItemDragService } from '../core/item-drag.service';
-import { AuthService } from '../core/auth.service';
-import { GroupId, groupById } from '../core/file-groups';
+import { ApiService } from '../core/api/api.service';
+import { StatsService } from '../core/stats/stats.service';
+import { NavEventsService } from '../core/nav/nav-events.service';
+import { UploadService } from '../core/upload/upload.service';
+import { DropTargetService } from '../core/drag-drop/drop-target.service';
+import { ItemDragService } from '../core/drag-drop/item-drag.service';
+import { AuthService } from '../core/auth/auth.service';
+import { GroupId, groupById } from '../core/files/file-groups';
 import { foldersActions } from '../store/folders/folders.actions';
 import { selectFolderChildren } from '../store/folders/folders.selectors';
 import { FolderTreeNode } from './folder-tree-node';
@@ -96,7 +96,11 @@ export class NavSidebar {
   /** "My Storage" (lăng kính Thư mục) đang hoạt động khi ở gốc /files hoặc /folder/*. */
   readonly browseActive = computed(() => {
     const u = this.url();
-    return u === '/files' || u.startsWith('/files?') || u.startsWith('/folder/');
+    return (
+      u === '/app/files' ||
+      u.startsWith('/app/files?') ||
+      u.startsWith('/app/folder/')
+    );
   });
 
   // --- Nút "+ Mới" như Google Drive (mục 11.H) — đích tải theo DropTargetService,

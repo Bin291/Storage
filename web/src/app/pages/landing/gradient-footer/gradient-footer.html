@@ -1,0 +1,40 @@
+<footer [style.padding-bottom]="gradientHeight">
+  <ng-content></ng-content>
+
+  <div
+    #band
+    aria-hidden="true"
+    class="band"
+    [style.height]="gradientHeight"
+    [style.transform]="'scaleY(' + progress() + ')'"
+  >
+    <svg
+      [attr.viewBox]="viewBox()"
+      preserveAspectRatio="none"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient [attr.id]="'grad-' + uid" x1="0" y1="1" x2="0" y2="0">
+          @for (s of stops; track s.offset) {
+            <stop [attr.offset]="s.offset" [attr.stop-color]="s.color" />
+          }
+        </linearGradient>
+        <filter [attr.id]="'blur-' + uid" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur [attr.stdDeviation]="blur" />
+        </filter>
+      </defs>
+      @for (bar of barRects(); track $index) {
+        <g [attr.filter]="'url(#blur-' + uid + ')'">
+          <rect
+            [attr.x]="bar.x"
+            [attr.y]="bar.y"
+            [attr.width]="bar.width"
+            [attr.height]="bar.height"
+            [attr.fill]="'url(#grad-' + uid + ')'"
+          />
+        </g>
+      }
+    </svg>
+  </div>
+</footer>

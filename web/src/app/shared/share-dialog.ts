@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../core/api.service';
-import { ShareView } from '../core/models';
+import { ApiService } from '../core/api/api.service';
+import { ShareView } from '../core/share/share.model';
 import { Modal } from './modal';
 
 /**

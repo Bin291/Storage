@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { FileItem } from '../../core/models';
+import { FileItem } from '../../core/files/file.model';
 import { filesActions } from './files.actions';
 
 export interface FilesState {

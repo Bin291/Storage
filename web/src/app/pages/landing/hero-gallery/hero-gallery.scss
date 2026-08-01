@@ -1,0 +1,175 @@
+// Port của bentoGridVariants (cva/Tailwind) sang SCSS thuần, dùng token hệ
+// thiết kế hiện có (_tokens.scss) thay vì cài Tailwind riêng cho 1 trang.
+:host {
+  display: block;
+}
+
+.scroll-track {
+  position: relative;
+  min-height: 100vh;
+  height: 350vh;
+  width: 100%;
+
+  &.dark {
+    background: var(--c-surface-dark);
+  }
+}
+
+.bento {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  height: 100vh;
+  width: 100%;
+  padding: var(--s-lg);
+  display: grid;
+  gap: var(--s-lg);
+
+  .cell {
+    overflow: hidden;
+    border-radius: var(--r-xl);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+  }
+
+  &.variant-default {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: 1fr 0.5fr 0.5fr 1fr;
+
+    .cell:nth-child(1) {
+      grid-column: span 8;
+      grid-row: span 3;
+      transform-origin: top right;
+    }
+    .cell:nth-child(2) {
+      display: none;
+    }
+    .cell:nth-child(3) {
+      display: none;
+      transform-origin: bottom right;
+    }
+    .cell:nth-child(4) {
+      grid-column: span 4;
+      transform-origin: top right;
+    }
+    .cell:nth-child(5) {
+      grid-column: span 4;
+    }
+
+    @media (min-width: 768px) {
+      .cell:nth-child(1) {
+        grid-column: span 6;
+      }
+      .cell:nth-child(2) {
+        display: block;
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+      .cell:nth-child(3) {
+        display: block;
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+      .cell:nth-child(4) {
+        grid-column: span 3;
+      }
+      .cell:nth-child(5) {
+        grid-column: span 3;
+      }
+    }
+  }
+
+  &.variant-threeCells {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+
+    .cell:nth-child(1) {
+      grid-column: span 2;
+      transform-origin: top right;
+    }
+  }
+
+  &.variant-fourCells {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+
+    .cell:nth-child(1) {
+      grid-column: span 1;
+      transform-origin: top right;
+    }
+    .cell:nth-child(2) {
+      grid-column: span 2;
+    }
+    .cell:nth-child(3) {
+      grid-column: span 2;
+      transform-origin: bottom right;
+    }
+  }
+}
+
+.hero-content {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: fit-content;
+  z-index: 10;
+  text-align: center;
+  padding: 0 var(--s-lg);
+
+  .eyebrow {
+    display: inline-block;
+    margin-bottom: var(--s-md);
+    padding: 4px 14px;
+    border-radius: var(--r-full);
+    background: var(--c-accent-soft);
+    color: var(--c-accent-strong);
+    font-size: var(--fs-caption);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    max-width: 640px;
+    margin: 0 auto;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--c-ink);
+  }
+
+  p {
+    max-width: 560px;
+    margin: var(--s-lg) auto 0;
+    color: var(--c-body);
+    font-size: var(--fs-body-md);
+  }
+
+  .cta-row {
+    margin-top: var(--s-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-lg);
+    flex-wrap: wrap;
+  }
+
+  .btn-lg {
+    height: 48px;
+    padding: 0 28px;
+    font-size: var(--fs-body-md);
+  }
+
+  .btn-link {
+    color: var(--c-ink);
+    font-weight: 500;
+    font-size: var(--fs-body-md);
+  }
+}

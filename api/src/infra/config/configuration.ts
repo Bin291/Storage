@@ -11,6 +11,33 @@ function splitOrigins(value: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Render Key Value (và hầu hết Redis managed) cấp 1 connection string duy nhất
+ * (VD rediss://red-xxxx:PASSWORD@host:port) thay vì host/port/password rời.
+ * Ưu tiên REDIS_URL nếu có; nếu không, dùng lại REDIS_HOST/PORT/PASSWORD/TLS
+ * cho local docker-compose (mục 5.B).
+ */
+function resolveRedisConfig() {
+  const url = process.env.REDIS_URL;
+  if (url) {
+    const parsed = new URL(url);
+    return {
+      host: parsed.hostname,
+      port: parseInt(parsed.port || '6379', 10),
+      password: parsed.password || undefined,
+      tls: parsed.protocol === 'rediss:',
+    };
+  }
+  return {
+    host: process.env.REDIS_HOST ?? '127.0.0.1',
+    port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
+    password: process.env.REDIS_PASSWORD || undefined,
+    // Redis managed qua internet (Upstash, Redis Cloud, Memorystore có TLS)
+    // bắt buộc mã hoá; Redis local trong docker-compose thì không.
+    tls: process.env.REDIS_TLS === 'true',
+  };
+}
+
 export default () => ({
   env: process.env.NODE_ENV ?? 'development',
   port: parseInt(process.env.PORT ?? '3000', 10),
@@ -37,14 +64,7 @@ export default () => ({
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   },
 
-  redis: {
-    host: process.env.REDIS_HOST ?? '127.0.0.1',
-    port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
-    password: process.env.REDIS_PASSWORD || undefined,
-    // Redis managed qua internet (Upstash, Redis Cloud, Memorystore có TLS)
-    // bắt buộc mã hoá; Redis local trong docker-compose thì không.
-    tls: process.env.REDIS_TLS === 'true',
-  },
+  redis: resolveRedisConfig(),
 
   // Google Cloud Storage, gọi qua XML API tương thích S3 (Interoperability).
   gcs: {

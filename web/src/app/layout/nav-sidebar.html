@@ -38,7 +38,7 @@
   <input #folderInput type="file" webkitdirectory hidden (change)="onPickFolder($event)" />
 
   <!-- Landing -->
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item home">
+  <a routerLink="/app" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item home">
     <span class="mi sm ico">home</span> Trang chủ
   </a>
 
@@ -46,7 +46,7 @@
   <div class="section-label">Duyệt</div>
   <!-- Cũng là đích thả (mục 11.O): kéo mục vào đây = chuyển về thư mục gốc -->
   <a
-    routerLink="/files"
+    routerLink="/app/files"
     class="nav-item"
     [class.active]="browseActive()"
     [class.drop-over]="rootDropOver()"
@@ -56,16 +56,16 @@
   >
     <span class="mi sm ico">cloud</span> My Storage
   </a>
-  <a routerLink="/starred" routerLinkActive="active" class="nav-item">
+  <a routerLink="/app/starred" routerLinkActive="active" class="nav-item">
     <span class="mi sm ico">star</span> Có gắn dấu sao
   </a>
-  <a routerLink="/recent" routerLinkActive="active" class="nav-item">
+  <a routerLink="/app/recent" routerLinkActive="active" class="nav-item">
     <span class="mi sm ico">schedule</span> Gần đây
   </a>
-  <a routerLink="/shared" routerLinkActive="active" class="nav-item">
+  <a routerLink="/app/shared" routerLinkActive="active" class="nav-item">
     <span class="mi sm ico">group</span> Được chia sẻ với tôi
   </a>
-  <a routerLink="/trash" routerLinkActive="active" class="nav-item">
+  <a routerLink="/app/trash" routerLinkActive="active" class="nav-item">
     <span class="mi sm ico">delete</span> Thùng rác
   </a>
 
@@ -91,7 +91,7 @@
             [disabled]="g.extensions.length === 0"
             aria-label="mở rộng"
           ><span class="mi sm">keyboard_arrow_right</span></button>
-          <a class="group-label" [routerLink]="['/type', g.def.id]">
+          <a class="group-label" [routerLink]="['/app/type', g.def.id]">
             <span class="mi sm ico">{{ g.def.icon }}</span>
             <span class="name">{{ g.def.label }}</span>
             <span class="count">{{ g.count }}</span>
@@ -104,7 +104,7 @@
               <a
                 class="ext-item"
                 [class.active]="activeExt() === e.extension"
-                [routerLink]="['/type', g.def.id, e.extension]"
+                [routerLink]="['/app/type', g.def.id, e.extension]"
               >
                 <span class="ext-name">{{ e.extension || '—' }}</span>
                 <span class="count">{{ e.count }}</span>
@@ -119,11 +119,11 @@
   <!-- Profile & Settings Footer -->
   <div class="sidebar-footer">
     <div class="profile-footer-container">
-      <a routerLink="/profile" routerLinkActive="active" class="profile-avatar-link" title="Hồ sơ cá nhân">
+      <a routerLink="/app/profile" routerLinkActive="active" class="profile-avatar-link" title="Hồ sơ cá nhân">
         <app-avatar [size]="32" />
         <span class="username-text">{{ user()?.user_metadata?.['display_name'] || (user()?.email?.split('@')?.[0]) }}</span>
       </a>
-      <a routerLink="/settings" routerLinkActive="active" class="settings-icon-link" title="Cài đặt">
+      <a routerLink="/app/settings" routerLinkActive="active" class="settings-icon-link" title="Cài đặt">
         <span class="mi">settings</span>
       </a>
     </div>

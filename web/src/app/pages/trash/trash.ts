@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { ApiService } from '../../core/api.service';
-import { StatsService } from '../../core/stats.service';
-import { NavEventsService } from '../../core/nav-events.service';
-import { TrashItem } from '../../core/models';
-import { formatDate, formatSize, iconForExtension } from '../../core/file-utils';
+import { ApiService } from '../../core/api/api.service';
+import { StatsService } from '../../core/stats/stats.service';
+import { NavEventsService } from '../../core/nav/nav-events.service';
+import { TrashItem } from '../../core/files/trash.model';
+import { formatDate, formatSize, iconForExtension } from '../../core/files/file-utils';
 import { Modal } from '../../shared/modal';
 
 /**

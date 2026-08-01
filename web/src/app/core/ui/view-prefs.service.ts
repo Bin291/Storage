@@ -1,5 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
-import { SortField, SortOrder } from './models';
+import { SortField, SortOrder } from '../files/file.model';
 
 export type ViewMode = 'grid' | 'list';
 export type Density = 'comfortable' | 'compact';

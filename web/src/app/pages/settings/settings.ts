@@ -1,14 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
-import { ThemeService, ThemeMode } from '../../core/theme.service';
-import { AccentService } from '../../core/accent.service';
-import { AuthService } from '../../core/auth.service';
+import { ThemeService, ThemeMode } from '../../core/ui/theme.service';
+import { AccentService } from '../../core/ui/accent.service';
+import { AuthService } from '../../core/auth/auth.service';
 import {
   ViewPrefsService,
   Density,
   ViewMode,
-} from '../../core/view-prefs.service';
-import { SortField, SortOrder } from '../../core/models';
+} from '../../core/ui/view-prefs.service';
+import { SortField, SortOrder } from '../../core/files/file.model';
 
 // Cài đặt cá nhân hoá — lưu ở localStorage (mục 11.D). Áp dụng live toàn app.
 @Component({

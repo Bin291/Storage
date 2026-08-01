@@ -1,6 +1,6 @@
 import { Component, effect, input, signal } from '@angular/core';
 import * as XLSX from 'xlsx';
-import { FileSource } from '../../core/file-source';
+import { FileSource } from '../../core/files/file-source';
 
 const MAX_ROWS = 500;
 

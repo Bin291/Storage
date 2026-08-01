@@ -1,13 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ApiService } from '../../core/api.service';
-import { FileSource } from '../../core/file-source';
-import { FileItem, SharedWithMeItem } from '../../core/models';
-import { formatDate, formatSize, iconForExtension } from '../../core/file-utils';
+import { ApiService } from '../../core/api/api.service';
+import { FileSource } from '../../core/files/file-source';
+import { FileItem } from '../../core/files/file.model';
+import { SharedWithMeItem } from '../../core/share/share.model';
+import { formatDate, formatSize, iconForExtension } from '../../core/files/file-utils';
 import {
   PreviewKind,
   isPreviewKindOpenable,
   previewKindForExtension,
-} from '../../core/preview-kind';
+} from '../../core/files/preview-kind';
 import { FilePreview } from '../../shared/preview/file-preview';
 
 /** 1 dòng đang hiển thị — mục gốc được chia sẻ, hoặc con khi duyệt vào thư mục. */

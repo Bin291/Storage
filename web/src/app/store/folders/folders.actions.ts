@@ -1,5 +1,5 @@
 import { createActionGroup, props } from '@ngrx/store';
-import { FolderItem } from '../../core/models';
+import { FolderItem } from '../../core/folders/folder.model';
 
 /** Cây con trực tiếp của 1 folder (hoặc gốc, parentId = null) — dùng bởi sidebar (mục 11.H). */
 export const foldersActions = createActionGroup({

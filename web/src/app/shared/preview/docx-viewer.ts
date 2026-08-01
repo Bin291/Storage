@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { renderAsync } from 'docx-preview';
-import { FileSource } from '../../core/file-source';
+import { FileSource } from '../../core/files/file-source';
 
 /**
  * Xem trước DOCX ngay trong app (mục 11.I) — render client-side bằng

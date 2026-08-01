@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, forkJoin } from 'rxjs';
-import { ApiService } from '../../core/api.service';
+import { ApiService } from '../../core/api/api.service';
 import { filesActions } from '../../store/files/files.actions';
 import {
   selectFiles,
@@ -20,31 +20,27 @@ import {
   selectFilesLoading,
   selectFilesTotal,
 } from '../../store/files/files.selectors';
-import { UploadService } from '../../core/upload.service';
-import { RealtimeService } from '../../core/realtime.service';
-import { ViewPrefsService } from '../../core/view-prefs.service';
-import { ToolbarService } from '../../core/toolbar.service';
-import { StatsService } from '../../core/stats.service';
-import { ClipboardService, ClipEntry } from '../../core/clipboard.service';
-import { NavEventsService } from '../../core/nav-events.service';
-import { DropTargetService } from '../../core/drop-target.service';
-import { DragItem, ItemDragService } from '../../core/item-drag.service';
-import {
-  BreadcrumbNode,
-  FileItem,
-  FolderItem,
-  SortField,
-  SortOrder,
-} from '../../core/models';
-import { groupById } from '../../core/file-groups';
-import { formatDate, formatSize, iconForExtension } from '../../core/file-utils';
+import { UploadService } from '../../core/upload/upload.service';
+import { RealtimeService } from '../../core/realtime/realtime.service';
+import { ViewPrefsService } from '../../core/ui/view-prefs.service';
+import { ToolbarService } from '../../core/ui/toolbar.service';
+import { StatsService } from '../../core/stats/stats.service';
+import { ClipboardService, ClipEntry } from '../../core/clipboard/clipboard.service';
+import { NavEventsService } from '../../core/nav/nav-events.service';
+import { DropTargetService } from '../../core/drag-drop/drop-target.service';
+import { DragItem, ItemDragService } from '../../core/drag-drop/item-drag.service';
+import { BreadcrumbNode } from '../../core/models/common.model';
+import { FileItem, SortField, SortOrder } from '../../core/files/file.model';
+import { FolderItem } from '../../core/folders/folder.model';
+import { groupById } from '../../core/files/file-groups';
+import { formatDate, formatSize, iconForExtension } from '../../core/files/file-utils';
 import {
   PreviewKind,
   isPreviewKindInline,
   isPreviewKindOpenable,
   isThumbnailCapable,
   previewKindForExtension,
-} from '../../core/preview-kind';
+} from '../../core/files/preview-kind';
 import { Modal } from '../../shared/modal';
 import { ShareDialog } from '../../shared/share-dialog';
 import { SafeUrlPipe } from '../../shared/safe-url.pipe';
@@ -842,7 +838,7 @@ export class Files {
   }
 
   openFolder(id: string): void {
-    this.router.navigate(['/folder', id]);
+    this.router.navigate(['/app/folder', id]);
   }
 
   // --- Rename ---
@@ -1187,9 +1183,9 @@ export class Files {
 
   locateUpload(task: any): void {
     if (task.folderId) {
-      this.router.navigate(['/folder', task.folderId]);
+      this.router.navigate(['/app/folder', task.folderId]);
     } else {
-      this.router.navigate(['/files']);
+      this.router.navigate(['/app/files']);
     }
   }
 

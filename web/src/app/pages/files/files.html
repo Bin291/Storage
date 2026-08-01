@@ -8,7 +8,7 @@
           <!-- Crumb cũng là đích thả: kéo mục lên đây = chuyển ngược lên cấp
                trên, thao tác hay dùng nhất mà lưới không có chỗ để thả. -->
           <a
-            routerLink="/files"
+            routerLink="/app/files"
             class="crumb"
             [class.drop-over]="isDropOver('root')"
             (dragover)="onDropTargetOver('root', null, $event)"
@@ -21,7 +21,7 @@
               <span class="crumb current">{{ node.name }}</span>
             } @else {
               <a
-                [routerLink]="['/folder', node.id]"
+                [routerLink]="['/app/folder', node.id]"
                 class="crumb"
                 [class.drop-over]="isDropOver(node.id)"
                 (dragover)="onDropTargetOver(node.id, node.id, $event)"
@@ -388,10 +388,10 @@
         <div class="prop-row loc">
           <span>Vị trí</span>
           <span class="path-crumbs">
-            <a routerLink="/files" class="pc" (click)="closeProperties()">My Storage</a>
+            <a routerLink="/app/files" class="pc" (click)="closeProperties()">My Storage</a>
             @for (n of pf.folderPath; track n.id) {
               <span class="pc-sep">›</span>
-              <a [routerLink]="['/folder', n.id]" class="pc" (click)="closeProperties()">{{ n.name }}</a>
+              <a [routerLink]="['/app/folder', n.id]" class="pc" (click)="closeProperties()">{{ n.name }}</a>
             }
           </span>
         </div>

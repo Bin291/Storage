@@ -1,5 +1,5 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { FileItem, FileListResult, ListParams } from '../../core/models';
+import { FileItem, FileListResult, ListParams } from '../../core/files/file.model';
 
 /** Danh sách file của view hiện tại (mục 11.H — trang Files). */
 export const filesActions = createActionGroup({

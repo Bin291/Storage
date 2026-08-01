@@ -1,8 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Subject, forkJoin } from 'rxjs';
-import { ApiService } from './api.service';
-import { NavEventsService } from './nav-events.service';
-import { StatsService } from './stats.service';
+import { ApiService } from '../api/api.service';
+import { NavEventsService } from '../nav/nav-events.service';
+import { StatsService } from '../stats/stats.service';
 
 export type DragItemKind = 'file' | 'folder';
 export interface DragItem {

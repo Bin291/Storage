@@ -1,14 +1,15 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../core/api.service';
-import { FileSource } from '../../core/file-source';
-import { FileItem, PublicShareMeta } from '../../core/models';
-import { formatSize, iconForExtension } from '../../core/file-utils';
+import { ApiService } from '../../core/api/api.service';
+import { FileSource } from '../../core/files/file-source';
+import { FileItem } from '../../core/files/file.model';
+import { PublicShareMeta } from '../../core/share/share.model';
+import { formatSize, iconForExtension } from '../../core/files/file-utils';
 import {
   PreviewKind,
   isPreviewKindOpenable,
   previewKindForExtension,
-} from '../../core/preview-kind';
+} from '../../core/files/preview-kind';
 import { FilePreview } from '../../shared/preview/file-preview';
 
 interface Row {

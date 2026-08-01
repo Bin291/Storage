@@ -1,21 +1,93 @@
-.auth {
+.auth-grid {
   /* dvh: 100vh trên mobile tính cả phần bị thanh địa chỉ che ⇒ form bị đẩy
      lệch xuống, phải cuộn mới thấy nút. */
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: var(--safe-t);
-  padding-bottom: var(--safe-b);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--s-lg);
+  display: grid;
+  grid-template-columns: 1fr;
   background: var(--c-canvas);
 }
 
+// Cột video chỉ xuất hiện trên desktop (giống bản gốc `hidden lg:block`) —
+// clip 100–107MB, không đáng tải/giải mã trên mobile vốn nhiều khả năng
+// dùng mạng di động và màn hẹp không có chỗ hiển thị nó.
+@media (min-width: 1024px) {
+  .auth-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.auth-col {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--s-lg);
+  padding-top: calc(var(--s-lg) + var(--safe-t));
+  padding-bottom: calc(var(--s-lg) + var(--safe-b));
+}
+
+// Hình trang trí (đơn sắc, do người dùng cung cấp) đè lên nền cột trái, nằm
+// dưới thẻ đăng nhập — z-index thấp + pointer-events none để không chặn form.
+.auth-deco {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  // object-fit: cover đảm bảo phủ kín cột dù màn cao/thấp thế nào (không còn
+  // để trống mảng trên như khi canh theo width + height:auto).
+  object-fit: cover;
+  object-position: bottom left;
+  transform: scale(1.35);
+  transform-origin: bottom left;
+  opacity: 0.16;
+  pointer-events: none;
+  user-select: none;
+}
+:root[data-theme='dark'] .auth-deco {
+  opacity: 0.1;
+}
+
 .auth-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 380px;
   text-align: center;
+}
+
+.auth-media {
+  position: relative;
+  display: none;
+  overflow: hidden;
+  background: var(--c-surface-dark);
+
+  .bg-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    // Crossfade mượt giữa 2 lớp video thay vì đổi src đột ngột (gây chớp đen).
+    // Thời gian này khớp với CROSSFADE_MS trong login.ts.
+    transition: opacity 0.9s ease;
+  }
+
+  // Gradient tối nhẹ ở đáy để hợp với nền tối/sáng của app, không che video.
+  .media-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.35), transparent 40%);
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .auth-media {
+    display: block;
+  }
 }
 
 .brand {

@@ -1,0 +1,24 @@
+:host {
+  display: block;
+}
+
+footer {
+  position: relative;
+  display: block;
+}
+
+.band {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  transform-origin: bottom;
+  will-change: transform;
+
+  svg {
+    height: 100%;
+    width: 100%;
+    display: block;
+  }
+}

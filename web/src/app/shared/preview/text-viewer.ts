@@ -1,5 +1,5 @@
 import { Component, effect, input, signal } from '@angular/core';
-import { FileSource } from '../../core/file-source';
+import { FileSource } from '../../core/files/file-source';
 
 /**
  * Xem trước dạng văn bản (mục 11.I):

@@ -16,22 +16,23 @@ import {
   Router,
 } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { ApiService } from '../core/api.service';
-import { AuthService } from '../core/auth.service';
-import { RealtimeService } from '../core/realtime.service';
-import { NotificationService } from '../core/notification.service';
-import { InboxService } from '../core/inbox.service';
-import type { FileItem, NotificationItem, SortField } from '../core/models';
-import { UploadService } from '../core/upload.service';
-import { StatsService } from '../core/stats.service';
-import { DropTargetService } from '../core/drop-target.service';
-import { ToolbarService } from '../core/toolbar.service';
-import { ViewPrefsService } from '../core/view-prefs.service';
+import { ApiService } from '../core/api/api.service';
+import { AuthService } from '../core/auth/auth.service';
+import { RealtimeService } from '../core/realtime/realtime.service';
+import { NotificationService } from '../core/notifications/notification.service';
+import { InboxService } from '../core/notifications/inbox.service';
+import type { FileItem, SortField } from '../core/files/file.model';
+import type { NotificationItem } from '../core/notifications/notification.model';
+import { UploadService } from '../core/upload/upload.service';
+import { StatsService } from '../core/stats/stats.service';
+import { DropTargetService } from '../core/drag-drop/drop-target.service';
+import { ToolbarService } from '../core/ui/toolbar.service';
+import { ViewPrefsService } from '../core/ui/view-prefs.service';
 import { FormsModule } from '@angular/forms';
 import { NavSidebar } from './nav-sidebar';
 
 /** Trang KHÔNG nhận kéo-thả tải lên (mục 11.H) — không có ngữ cảnh "tệp" để tải vào. */
-const NO_DROP_PREFIXES = ['/settings', '/profile'];
+const NO_DROP_PREFIXES = ['/app/settings', '/app/profile'];
 
 @Component({
   selector: 'app-shell',
@@ -77,9 +78,9 @@ export class Shell implements OnInit, OnDestroy {
 
   locateUpload(task: any): void {
     if (task.folderId) {
-      void this.router.navigate(['/folder', task.folderId]);
+      void this.router.navigate(['/app/folder', task.folderId]);
     } else {
-      void this.router.navigate(['/files']);
+      void this.router.navigate(['/app/files']);
     }
   }
 
@@ -150,7 +151,7 @@ export class Shell implements OnInit, OnDestroy {
     this.closeSuggest();
     this.searchQuery.set('');
     void this.router.navigate(
-      file.folderId ? ['/folder', file.folderId] : ['/files'],
+      file.folderId ? ['/app/folder', file.folderId] : ['/app/files'],
       { queryParams: { focus: file.id } },
     );
   }
@@ -160,7 +161,7 @@ export class Shell implements OnInit, OnDestroy {
     const q = this.searchQuery().trim();
     if (!q) return;
     this.closeSuggest();
-    void this.router.navigate(['/search'], { queryParams: { q } });
+    void this.router.navigate(['/app/search'], { queryParams: { q } });
   }
 
   // --- Kéo-thả tải lên trong vùng nội dung (main.content) ---

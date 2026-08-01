@@ -1,6 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { AuthService } from '../core/auth.service';
-import { AvatarService } from '../core/avatar.service';
+import { AuthService } from '../core/auth/auth.service';
+import { AvatarService } from '../core/ui/avatar.service';
 
 /**
  * Ảnh đại diện dùng chung (topnav + trang Profile — mục 11.E): hiện <img>

@@ -1,8 +1,17 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth.guard';
+import { authGuard, guestGuard } from './core/auth/auth.guard';
 import { Shell } from './layout/shell';
 
 export const routes: Routes = [
+  // Landing công khai (giới thiệu sản phẩm) — khách chưa đăng nhập thấy trang
+  // này ở '/'; người đã đăng nhập bị đẩy thẳng vào /app (guestGuard).
+  {
+    path: '',
+    canActivate: [guestGuard],
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./pages/landing/landing').then((m) => m.Landing),
+  },
   {
     path: 'login',
     canActivate: [guestGuard],
@@ -16,7 +25,7 @@ export const routes: Routes = [
       import('./pages/public-share/public-share').then((m) => m.PublicShare),
   },
   {
-    path: '',
+    path: 'app',
     component: Shell,
     canActivate: [authGuard],
     children: [

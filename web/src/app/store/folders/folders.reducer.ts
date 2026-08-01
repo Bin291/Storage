@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { FolderItem } from '../../core/models';
+import { FolderItem } from '../../core/folders/folder.model';
 import { foldersActions } from './folders.actions';
 
 export interface FoldersState {

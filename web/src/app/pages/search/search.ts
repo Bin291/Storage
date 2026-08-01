@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../core/api.service';
-import { SearchResultItem } from '../../core/models';
-import { iconForExtension } from '../../core/file-utils';
+import { ApiService } from '../../core/api/api.service';
+import { SearchResultItem } from '../../core/search/search.model';
+import { iconForExtension } from '../../core/files/file-utils';
 
 /**
  * AI omnisearch (mục 8.C): chỉ gọi API khi nhấn Enter (không debounce theo phím)

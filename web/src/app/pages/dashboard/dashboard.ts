@@ -1,17 +1,17 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
-import { UploadService } from '../../core/upload.service';
-import { AuthService } from '../../core/auth.service';
-import { StatsService } from '../../core/stats.service';
-import { FileItem } from '../../core/models';
-import { formatSize, formatDate, iconForExtension } from '../../core/file-utils';
+import { ApiService } from '../../core/api/api.service';
+import { UploadService } from '../../core/upload/upload.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { StatsService } from '../../core/stats/stats.service';
+import { FileItem } from '../../core/files/file.model';
+import { formatSize, formatDate, iconForExtension } from '../../core/files/file-utils';
 import {
   PreviewKind,
   isPreviewKindInline,
   isPreviewKindOpenable,
   previewKindForExtension,
-} from '../../core/preview-kind';
+} from '../../core/files/preview-kind';
 import { SafeUrlPipe } from '../../shared/safe-url.pipe';
 import { ImageViewer } from '../../shared/preview/image-viewer';
 import { DocxViewer } from '../../shared/preview/docx-viewer';

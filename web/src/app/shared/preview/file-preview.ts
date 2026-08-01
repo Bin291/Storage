@@ -1,6 +1,6 @@
 import { Component, computed, effect, input, signal } from '@angular/core';
-import { FileSource } from '../../core/file-source';
-import { PreviewKind } from '../../core/preview-kind';
+import { FileSource } from '../../core/files/file-source';
+import { PreviewKind } from '../../core/files/preview-kind';
 import { SafeUrlPipe } from '../safe-url.pipe';
 import { ImageViewer } from './image-viewer';
 import { DocxViewer } from './docx-viewer';

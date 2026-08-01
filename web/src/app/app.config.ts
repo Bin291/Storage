@@ -11,7 +11,7 @@ import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { routes } from './app.routes';
-import { authInterceptor } from './core/auth.interceptor';
+import { authInterceptor } from './core/auth/auth.interceptor';
 import { authReducer } from './store/auth/auth.reducer';
 import { foldersReducer } from './store/folders/folders.reducer';
 import { FoldersEffects } from './store/folders/folders.effects';

@@ -1,0 +1,34 @@
+<div class="scroll-track" #scrollTrack [class.dark]="dark">
+  <div class="bento" [class]="'variant-' + variant">
+    @for (img of images; track img; let i = $index) {
+      <div
+        class="cell"
+        [style.translate]="cellTranslate()"
+        [style.scale]="cellScale()"
+      >
+        <img [src]="img" alt="" loading="lazy" />
+      </div>
+    }
+  </div>
+
+  <div
+    class="hero-content"
+    [style.position]="contentPosition()"
+    [style.opacity]="contentOpacity()"
+    [style.scale]="contentScale()"
+  >
+    @if (eyebrow) {
+      <span class="eyebrow">{{ eyebrow }}</span>
+    }
+    <h1>{{ title }}</h1>
+    <p>{{ description }}</p>
+    <div class="cta-row">
+      @if (primaryLabel) {
+        <a routerLink="/login" class="btn btn-primary btn-lg">{{ primaryLabel }}</a>
+      }
+      @if (secondaryLabel) {
+        <a href="#features" class="btn-link">{{ secondaryLabel }}</a>
+      }
+    </div>
+  </div>
+</div>

@@ -1,9 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import imageCompression from 'browser-image-compression';
-import { environment } from '../../environments/environment';
-import { ApiService } from './api.service';
-import { NavEventsService } from './nav-events.service';
+import { environment } from '../../../environments/environment';
+import { ApiService } from '../api/api.service';
+import { NavEventsService } from '../nav/nav-events.service';
 
 export interface UploadTask {
   id: string;

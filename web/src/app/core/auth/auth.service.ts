@@ -1,13 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { SupabaseClientService } from './supabase.client';
-import { authActions } from '../store/auth/auth.actions';
+import { SupabaseClientService } from '../supabase/supabase.client';
+import { authActions } from '../../store/auth/auth.actions';
 import {
   selectAuthReady,
   selectIsAuthenticated,
   selectSession,
   selectUser,
-} from '../store/auth/auth.selectors';
+} from '../../store/auth/auth.selectors';
 
 /**
  * Quản lý phiên đăng nhập qua Supabase Auth (mục 3 PLAN.md).
