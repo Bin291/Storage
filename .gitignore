@@ -1,6 +1,7 @@
 # Only track web, api, and these root files, ignore everything else
 /*
 !/.gitignore
+!/.gitattributes
 !/web
 !/api
 !/Makefile
